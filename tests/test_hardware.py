@@ -4,9 +4,9 @@ from dataclasses import replace
 
 import pytest
 
-from heliostune.errors import ProtocolError
-from heliostune.hardware import HARDWARE_EXPECTATIONS, expectation_for_gpu, validate_hardware
-from heliostune.schema import HardwareProfile
+from quartet.errors import ProtocolError
+from quartet.hardware import HARDWARE_EXPECTATIONS, expectation_for_gpu, validate_hardware
+from quartet.schema import HardwareProfile
 
 _VALID_PROFILES = {
     "L4": HardwareProfile("L4", "NVIDIA L4", (8, 9), 58, 22.0),

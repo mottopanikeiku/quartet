@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_CONFIGS,
     DEFAULT_WORKLOADS,
     HOPPER_GEMM_CONFIGS,
@@ -26,7 +26,7 @@ from heliostune.configs import (
 
 _REPO = Path(__file__).resolve().parents[1]
 _PROBE_MODULE = _REPO / "modal_precision_probe.py"
-_WHEEL_NAME = "heliostune-0.4.0-py3-none-any.whl"
+_WHEEL_NAME = "quartet-0.4.0-py3-none-any.whl"
 _ANALYZER_MODULE = _REPO / "scripts/analyze_precision_probe.py"
 
 
@@ -75,13 +75,13 @@ class _FakeApp:
 
 
 def _source_digest(repository: Path) -> str:
-    package = repository / "src/heliostune"
+    package = repository / "src/quartet"
     digest = hashlib.sha256()
     paths = sorted(
         path for path in package.rglob("*") if path.is_file() and "__pycache__" not in path.parts
     )
     for path in paths:
-        digest.update(f"heliostune/{path.relative_to(package).as_posix()}".encode())
+        digest.update(f"quartet/{path.relative_to(package).as_posix()}".encode())
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()
@@ -113,7 +113,7 @@ def _load_probe() -> ModuleType:
     modal.App = _FakeApp  # type: ignore[attr-defined]
     modal.Image = _FakeImage  # type: ignore[attr-defined]
     previous_modal = sys.modules.get("modal")
-    previous_wheel = os.environ.get("HELIOSTUNE_MODAL_WHEEL")
+    previous_wheel = os.environ.get("QUARTET_MODAL_WHEEL")
     previous_run = subprocess.run
     head = "a" * 40
     with tempfile.TemporaryDirectory() as directory:
@@ -135,7 +135,7 @@ def _load_probe() -> ModuleType:
             return SimpleNamespace(stdout=stdout)
 
         sys.modules["modal"] = modal
-        os.environ["HELIOSTUNE_MODAL_WHEEL"] = str(wheel)
+        os.environ["QUARTET_MODAL_WHEEL"] = str(wheel)
         subprocess.run = fake_run  # type: ignore[assignment]
         try:
             spec = importlib.util.spec_from_file_location(
@@ -151,9 +151,9 @@ def _load_probe() -> ModuleType:
             else:
                 sys.modules["modal"] = previous_modal
             if previous_wheel is None:
-                del os.environ["HELIOSTUNE_MODAL_WHEEL"]
+                del os.environ["QUARTET_MODAL_WHEEL"]
             else:
-                os.environ["HELIOSTUNE_MODAL_WHEEL"] = previous_wheel
+                os.environ["QUARTET_MODAL_WHEEL"] = previous_wheel
     return module
 
 
@@ -459,7 +459,7 @@ def test_gate_rejects_stale_wheel_manifest(
     tmp_path: Path,
 ) -> None:
     repository = tmp_path / "repo"
-    package = repository / "src/heliostune"
+    package = repository / "src/quartet"
     package.mkdir(parents=True)
     (package / "__init__.py").write_text('"""tiny source."""\n', encoding="utf-8")
     wheel = tmp_path / _WHEEL_NAME
@@ -561,7 +561,7 @@ def _fail_sidecar_write(
     monkeypatch: pytest.MonkeyPatch,
     destination: Path,
 ) -> Path:
-    from heliostune.tooling import artifacts
+    from quartet.tooling import artifacts
 
     sidecar = Path(f"{destination}.manifest.json")
     write_json_atomic = artifacts.write_json_atomic

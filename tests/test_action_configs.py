@@ -6,7 +6,7 @@ from dataclasses import FrozenInstanceError, replace
 
 import pytest
 
-from heliostune.action_configs import (
+from quartet.action_configs import (
     ALL_CANDIDATES,
     NON_SPLIT_CANDIDATES,
     SPLIT_K_CANDIDATES,
@@ -14,8 +14,8 @@ from heliostune.action_configs import (
     SplitKConfig,
     candidates_for,
 )
-from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, HopperGemmConfig, KernelConfig
-from heliostune.errors import SchemaError
+from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, HopperGemmConfig, KernelConfig
+from quartet.errors import SchemaError
 
 
 def test_action_enumeration_does_not_import_gpu_dependencies() -> None:
@@ -25,12 +25,12 @@ def test_action_enumeration_does_not_import_gpu_dependencies() -> None:
             "-c",
             (
                 "import sys; "
-                "from heliostune.action_configs import candidates_for; "
-                "from heliostune.configs import DEFAULT_WORKLOADS; "
+                "from quartet.action_configs import candidates_for; "
+                "from quartet.configs import DEFAULT_WORKLOADS; "
                 "assert all(candidates_for(w) for w in DEFAULT_WORKLOADS); "
                 "assert 'torch' not in sys.modules; "
                 "assert 'triton' not in sys.modules; "
-                "assert 'heliostune.action_expansion' not in sys.modules"
+                "assert 'quartet.action_expansion' not in sys.modules"
             ),
         ],
         check=True,

@@ -9,11 +9,11 @@ from pathlib import Path
 
 import pytest
 
-import heliostune.cli as cli
-import heliostune.tooling.engineering_report as engineering_report
-import heliostune.tooling.report as legacy_report
-from heliostune.errors import SchemaError
-from heliostune.tooling.engineering_report import (
+import quartet.cli as cli
+import quartet.tooling.engineering_report as engineering_report
+import quartet.tooling.report as legacy_report
+from quartet.errors import SchemaError
+from quartet.tooling.engineering_report import (
     HOPPER_STUDY_ID,
     PRECISION_STUDY_ID,
     HopperSummary,

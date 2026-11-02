@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from types import ModuleType
 
-from heliostune.tooling.artifacts import historical_artifact_path
+from quartet.tooling.artifacts import historical_artifact_path
 
 _REPO = Path(__file__).resolve().parents[1]
 _SCRIPT = _REPO / "scripts/capture_historical_baseline.py"

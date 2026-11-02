@@ -3,7 +3,7 @@
 Question: the frozen Parhelion v2 H100 matrix reports ``torch.matmul`` beating the
 bank-1-selected, bank-2-scored best of 36 Triton launch configurations on 96/96
 workloads (torch/best-Triton latency endpoint 0.627266). The Triton kernel in
-``heliostune.kernel`` hard-codes an FP32 accumulator,
+``quartet.kernel`` hard-codes an FP32 accumulator,
 while PyTorch 2.8 defaults ``torch.backends.cuda.matmul.allow_fp16_reduced_precision_
 reduction`` to ``True``, permitting FP16 split-K reduction. This probe times, on one
 H100 and within a single run, ``torch.matmul`` with that flag enabled, ``torch.matmul``
@@ -74,7 +74,7 @@ _SEED_NAMESPACE = "heliostune-precision-probe-v1"
 _ARM_NAMES = ("torch_reduced", "torch_strict", "triton")
 # The frozen H100 protocol: benchmarks/parhelion-v2-h100-freeze.json
 # final_evaluation.{warmup_ms,repetition_ms,replicates,banks} with the median of
-# heliostune.kernel._timed_do_bench's [0.2, 0.5, 0.8] quantiles.
+# quartet.kernel._timed_do_bench's [0.2, 0.5, 0.8] quantiles.
 _FROZEN_WARMUP_MS = 25
 _FROZEN_REP_MS = 100
 _FROZEN_BANK_VALUES = (0, 1, 2)
@@ -105,21 +105,21 @@ def _sha256_file(path: Path) -> str:
 
 def _serialized_json_sha256(value: object) -> str:
     """Hash the exact bytes that ``write_json_atomic`` will publish."""
-    from heliostune.tooling.artifacts import strict_json_dumps
+    from quartet.tooling.artifacts import strict_json_dumps
 
     return hashlib.sha256(strict_json_dumps(value).encode("utf-8")).hexdigest()
 
 
 def _source_digest(repository: Path) -> str:
-    package = repository / "src/heliostune"
+    package = repository / "src/quartet"
     if not package.is_dir():
-        raise RuntimeError(f"HeliosTune source directory does not exist: {package}")
+        raise RuntimeError(f"quartet source directory does not exist: {package}")
     digest = hashlib.sha256()
     paths = sorted(
         path for path in package.rglob("*") if path.is_file() and "__pycache__" not in path.parts
     )
     for path in paths:
-        name = f"heliostune/{path.relative_to(package).as_posix()}"
+        name = f"quartet/{path.relative_to(package).as_posix()}"
         digest.update(name.encode())
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
@@ -188,10 +188,10 @@ def validate_wheel_manifest(
     remote: bool = False,
 ) -> Path:
     """Validate wheel bytes and, locally, bind them to the current HEAD and source."""
-    configured_manifest = os.environ.get("HELIOSTUNE_MODAL_WHEEL_MANIFEST")
+    configured_manifest = os.environ.get("QUARTET_MODAL_WHEEL_MANIFEST")
     if remote:
         if not configured_manifest:
-            raise RuntimeError("HELIOSTUNE_MODAL_WHEEL_MANIFEST is required for a remote wheel")
+            raise RuntimeError("QUARTET_MODAL_WHEEL_MANIFEST is required for a remote wheel")
         manifest = Path(configured_manifest)
         if manifest != wheel_manifest_path(wheel):
             raise RuntimeError("remote Modal wheel manifest must be adjacent to the wheel")
@@ -256,16 +256,16 @@ def validate_wheel_manifest(
 
 def configured_modal_wheel(root: Path | None = None) -> Path:
     base = _REPO if root is None else root.resolve()
-    configured = os.environ.get("HELIOSTUNE_MODAL_WHEEL")
+    configured = os.environ.get("QUARTET_MODAL_WHEEL")
     if configured:
         wheel = Path(configured)
         if not wheel.is_file():
-            raise RuntimeError(f"HELIOSTUNE_MODAL_WHEEL does not exist: {wheel}")
+            raise RuntimeError(f"QUARTET_MODAL_WHEEL does not exist: {wheel}")
         remote = wheel.is_absolute() and wheel.parent == Path("/root")
         validate_wheel_manifest(wheel, repository=base, remote=remote)
         return wheel
     directory = base / _WHEEL_DIRECTORY
-    wheels = tuple(sorted(directory.glob("heliostune-*.whl")))
+    wheels = tuple(sorted(directory.glob("quartet-*.whl")))
     if len(wheels) != 1:
         raise RuntimeError(
             "run `uv run python scripts/build_modal_wheel.py` before Modal; "
@@ -288,14 +288,14 @@ def build_image(wheel: Path) -> modal.Image:
         .run_commands(f"python -m pip install --no-deps {wheel_remote}")
         .env(
             {
-                "HELIOSTUNE_MODAL_WHEEL": wheel_remote,
-                "HELIOSTUNE_MODAL_WHEEL_MANIFEST": manifest_remote,
+                "QUARTET_MODAL_WHEEL": wheel_remote,
+                "QUARTET_MODAL_WHEEL_MANIFEST": manifest_remote,
             }
         )
     )
 
 
-app = modal.App("heliostune-precision-probe")
+app = modal.App("quartet-precision-probe")
 _MODAL_WHEEL = configured_modal_wheel()
 image = build_image(_MODAL_WHEEL)
 
@@ -303,7 +303,7 @@ image = build_image(_MODAL_WHEEL)
 def probe_seed(*, purpose: str, bank: int, workload_key: str) -> int:
     """Return the deterministic 64-bit probe seed for one randomized decision.
 
-    Deliberately outside ``heliostune.tooling.protocol.v3_seed``'s frozen purpose namespace: this
+    Deliberately outside ``quartet.tooling.protocol.v3_seed``'s frozen purpose namespace: this
     is exploratory work and must not mint seeds inside a published protocol.
     """
     if not purpose or purpose != purpose.strip():
@@ -331,18 +331,18 @@ def _remote_probe(
 
     import torch
 
-    from heliostune.configs import (
+    from quartet.configs import (
         DEFAULT_CONFIGS,
         DEFAULT_WORKLOADS,
         PARHELION_V3_CANDIDATE_CONFIGS,
         KernelConfig,
         Workload,
     )
-    from heliostune.hardware import expectation_for_gpu, validate_hardware
+    from quartet.hardware import expectation_for_gpu, validate_hardware
 
     # _timed_do_bench is private but is the exact frozen timing helper; reproducing it
     # here instead would silently decouple the probe from the published protocol.
-    from heliostune.kernel import _timed_do_bench, get_hardware_profile, matmul
+    from quartet.kernel import _timed_do_bench, get_hardware_profile, matmul
 
     if not workload_keys:
         raise ValueError("the probe requires at least one workload key")
@@ -362,7 +362,7 @@ def _remote_probe(
     profile = get_hardware_profile(gpu)
     validate_hardware(profile, expectation_for_gpu(gpu))
 
-    # Reproduce heliostune.kernel.benchmark_measurements' legacy-bank ordering over the
+    # Reproduce quartet.kernel.benchmark_measurements' legacy-bank ordering over the
     # full 96-workload manifest so every tensor is bit-identical to the committed archive,
     # then keep only the requested subset in that same order.
     canonical = list(DEFAULT_WORKLOADS)
@@ -518,13 +518,13 @@ def probe_h100(
 @app.function(image=image, gpu=_MODAL_SELECTOR, timeout=_GATE_TIMEOUT_SECONDS)
 def hopper_correctness_h100() -> dict[str, Any]:
     """Validate every Hopper candidate without executing a timing primitive."""
-    from heliostune.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
-    from heliostune.hopper_kernel import (
+    from quartet.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
+    from quartet.hopper_kernel import (
         assert_candidate_kernels_correct,
         validation_workloads,
     )
-    from heliostune.kernel import get_hardware_profile
-    from heliostune.tooling.artifacts import strict_json_dumps
+    from quartet.kernel import get_hardware_profile
+    from quartet.tooling.artifacts import strict_json_dumps
 
     workloads = validation_workloads()
     results = assert_candidate_kernels_correct(_GPU)
@@ -576,8 +576,8 @@ def hopper_correctness_h100() -> dict[str, Any]:
 @app.function(image=image, gpu=_MODAL_SELECTOR, timeout=_BENCHMARK_TIMEOUT_SECONDS)
 def hopper_benchmark_h100() -> dict[str, object]:
     """Benchmark the frozen one-bank Hopper candidate cross-product."""
-    from heliostune.configs import DEFAULT_WORKLOADS
-    from heliostune.hopper_benchmark import benchmark_hopper_candidates
+    from quartet.configs import DEFAULT_WORKLOADS
+    from quartet.hopper_benchmark import benchmark_hopper_candidates
 
     return benchmark_hopper_candidates(
         gpu=_GPU,
@@ -593,7 +593,7 @@ def _sha256_payload(payload: str) -> str:
 
 
 def _gate_config_manifest() -> dict[str, list[dict[str, object]]]:
-    from heliostune.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
+    from quartet.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
 
     return {
         "hopper_gemm": [
@@ -606,14 +606,14 @@ def _gate_config_manifest() -> dict[str, list[dict[str, object]]]:
 
 
 def _gate_config_manifest_sha256(configs: dict[str, list[dict[str, object]]]) -> str:
-    from heliostune.tooling.artifacts import strict_json_dumps
+    from quartet.tooling.artifacts import strict_json_dumps
 
     return _sha256_payload(strict_json_dumps(configs, compact=True))
 
 
 def _expected_gate_checks() -> set[tuple[str, str, str]]:
-    from heliostune.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
-    from heliostune.hopper_spec import SKINNY_M_LIMIT, validation_workloads
+    from quartet.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
+    from quartet.hopper_spec import SKINNY_M_LIMIT, validation_workloads
 
     expected: set[tuple[str, str, str]] = set()
     for workload in validation_workloads():
@@ -631,11 +631,11 @@ def _validated_gate_payload(
     payload: object,
 ) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]]]:
     """Validate the exact correctness result against local candidate manifests."""
-    from heliostune.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
-    from heliostune.hardware import expectation_for_gpu, validate_hardware
-    from heliostune.hopper_spec import validation_workloads
-    from heliostune.schema import HardwareProfile
-    from heliostune.validation import (
+    from quartet.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
+    from quartet.hardware import expectation_for_gpu, validate_hardware
+    from quartet.hopper_spec import validation_workloads
+    from quartet.schema import HardwareProfile
+    from quartet.validation import (
         exact_bool,
         exact_fields,
         exact_int,
@@ -871,7 +871,7 @@ def _resolve_wheel(path: str) -> Path:
     if wheel.resolve() != _MODAL_WHEEL.resolve():
         raise ValueError(
             "--wheel must match the wheel baked into the image; set "
-            "HELIOSTUNE_MODAL_WHEEL before `modal run` to choose another wheel"
+            "QUARTET_MODAL_WHEEL before `modal run` to choose another wheel"
         )
     return wheel
 
@@ -880,8 +880,8 @@ def archive_baseline(archive: Path, gpu: str) -> dict[str, Any]:
     """Select on frozen bank 1 and score the selected configuration on bank 2."""
     import math
 
-    from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS
-    from heliostune.tooling.artifacts import read_measurements
+    from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS
+    from quartet.tooling.artifacts import read_measurements
 
     selection_bank = 1
     evaluation_bank = 2
@@ -1018,7 +1018,7 @@ def _validate_timing_fields(
     *,
     context: str,
 ) -> None:
-    from heliostune.validation import finite_float
+    from quartet.validation import finite_float
 
     p20 = finite_float(
         arm["latency_p20_ms"], context=f"{context} latency_p20_ms", strictly_positive=True
@@ -1051,9 +1051,9 @@ def _validated_payload(
     """Return one exact remote payload and its fully validated unique rows."""
     import random
 
-    from heliostune.configs import DEFAULT_WORKLOADS, KernelConfig, Workload
-    from heliostune.schema import HardwareProfile
-    from heliostune.validation import (
+    from quartet.configs import DEFAULT_WORKLOADS, KernelConfig, Workload
+    from quartet.schema import HardwareProfile
+    from quartet.validation import (
         exact_bool,
         exact_fields,
         exact_int,
@@ -1296,10 +1296,10 @@ def _validated_correctness_gate(
     head_sha256: str,
 ) -> dict[str, str]:
     """Validate and bind the completed correctness gate before any paid spawn."""
-    from heliostune.collection import AttemptJournal, attempt_journal_path, manifest_path
-    from heliostune.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
-    from heliostune.tooling.artifacts import strict_json_dumps
-    from heliostune.validation import exact_bool, exact_fields, exact_int, nonblank_string
+    from quartet.collection import AttemptJournal, attempt_journal_path, manifest_path
+    from quartet.configs import HOPPER_GEMM_CONFIGS, SKINNY_GEMV_CONFIGS
+    from quartet.tooling.artifacts import strict_json_dumps
+    from quartet.validation import exact_bool, exact_fields, exact_int, nonblank_string
 
     if not gate_path.is_file():
         raise ValueError(f"Hopper correctness gate does not exist: {gate_path}")
@@ -1633,7 +1633,7 @@ def _validated_correctness_gate(
 
 
 def _validated_benchmark_timing(value: object, *, context: str) -> dict[str, float]:
-    from heliostune.validation import exact_fields, finite_float
+    from quartet.validation import exact_fields, finite_float
 
     timing = exact_fields(
         value,
@@ -1660,14 +1660,14 @@ def _validated_benchmark_payload(
     list[dict[str, object]],
 ]:
     """Validate the exact one-bank remote benchmark result and cross-product."""
-    from heliostune.configs import (
+    from quartet.configs import (
         DEFAULT_WORKLOADS,
         HOPPER_GEMM_CONFIGS,
         SKINNY_GEMV_CONFIGS,
     )
-    from heliostune.hardware import expectation_for_gpu, validate_hardware
-    from heliostune.schema import HardwareProfile
-    from heliostune.validation import (
+    from quartet.hardware import expectation_for_gpu, validate_hardware
+    from quartet.schema import HardwareProfile
+    from quartet.validation import (
         exact_bool,
         exact_fields,
         exact_int,
@@ -1869,7 +1869,7 @@ def main(
     workloads: str = "",
     wheel: str = "",
 ) -> None:
-    from heliostune.collection import (
+    from quartet.collection import (
         AttemptRecord,
         AttemptStatus,
         CollectionBinding,
@@ -1879,10 +1879,10 @@ def main(
         manifest_path,
         preflight_collection,
     )
-    from heliostune.configs import DEFAULT_WORKLOADS
-    from heliostune.tooling.artifacts import strict_json_dumps, write_json_atomic
-    from heliostune.tooling.protocol import runtime_manifest
-    from heliostune.tooling.v3_artifacts import sha256_file
+    from quartet.configs import DEFAULT_WORKLOADS
+    from quartet.tooling.artifacts import strict_json_dumps, write_json_atomic
+    from quartet.tooling.protocol import runtime_manifest
+    from quartet.tooling.v3_artifacts import sha256_file
 
     if type(warmup_ms) is not int or warmup_ms != _FROZEN_WARMUP_MS:
         raise ValueError(f"warmup-ms must be exactly {_FROZEN_WARMUP_MS}")
@@ -2038,7 +2038,7 @@ def main(
             "binding": binding.to_dict(),
             "protocol": protocol,
             "triton_config_keys": triton_config_keys,
-            # Keyed "data" and "attempt_journal" so heliostune.collection's preflight
+            # Keyed "data" and "attempt_journal" so quartet.collection's preflight
             # recognises the pair and refuses to overwrite a digest-valid probe.
             "data": {
                 "path": str(destination),
@@ -2080,7 +2080,7 @@ def hopper_gate(
     wheel: str = "",
 ) -> None:
     """Run the one-call correctness-only gate required before paid collection."""
-    from heliostune.collection import (
+    from quartet.collection import (
         AttemptRecord,
         AttemptStatus,
         CollectionBinding,
@@ -2089,10 +2089,10 @@ def hopper_gate(
         manifest_path,
         preflight_collection,
     )
-    from heliostune.tooling.artifacts import strict_json_dumps, write_json_atomic
-    from heliostune.tooling.protocol import runtime_manifest
-    from heliostune.tooling.v3_artifacts import sha256_file
-    from heliostune.validation import nonblank_string
+    from quartet.tooling.artifacts import strict_json_dumps, write_json_atomic
+    from quartet.tooling.protocol import runtime_manifest
+    from quartet.tooling.v3_artifacts import sha256_file
+    from quartet.validation import nonblank_string
 
     destination = _resolved_gate_output(output)
     wheel_path = _resolve_wheel(wheel)
@@ -2262,7 +2262,7 @@ def hopper_benchmark(
     wheel: str = "",
 ) -> None:
     """Run the single-call, bank-zero H100 engineering benchmark."""
-    from heliostune.collection import (
+    from quartet.collection import (
         AttemptRecord,
         AttemptStatus,
         CollectionBinding,
@@ -2271,10 +2271,10 @@ def hopper_benchmark(
         manifest_path,
         preflight_collection,
     )
-    from heliostune.tooling.artifacts import strict_json_dumps, write_json_atomic
-    from heliostune.tooling.protocol import runtime_manifest
-    from heliostune.tooling.v3_artifacts import sha256_file
-    from heliostune.validation import nonblank_string
+    from quartet.tooling.artifacts import strict_json_dumps, write_json_atomic
+    from quartet.tooling.protocol import runtime_manifest
+    from quartet.tooling.v3_artifacts import sha256_file
+    from quartet.validation import nonblank_string
 
     destination = _resolved_gate_output(output)
     gate_path = _resolved_gate_output(_DEFAULT_GATE_OUTPUT)

@@ -9,11 +9,11 @@ from pathlib import Path
 import pytest
 import zstandard
 
-import heliostune.tooling.artifacts as artifacts_module
-from heliostune.configs import KernelConfig, Workload
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.schema import HardwareProfile, Measurement
-from heliostune.tooling.artifacts import (
+import quartet.tooling.artifacts as artifacts_module
+from quartet.configs import KernelConfig, Workload
+from quartet.errors import ArtifactError, SchemaError
+from quartet.schema import HardwareProfile, Measurement
+from quartet.tooling.artifacts import (
     read_json,
     read_measurements,
     write_bytes_atomic_noreplace,
@@ -132,7 +132,7 @@ def test_atomic_noreplace_publishes_exact_bytes(tmp_path: Path) -> None:
     write_bytes_atomic_noreplace(destination, payload)
 
     assert destination.read_bytes() == payload
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 @pytest.mark.parametrize("kind", ["regular", "symlink", "dangling", "hard-link"])
@@ -165,7 +165,7 @@ def test_atomic_noreplace_preserves_existing_entry(
         assert destination.readlink() == tmp_path / "missing"
     else:
         assert destination.read_bytes() == b"existing"
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 def test_atomic_noreplace_concurrent_destination_wins(
@@ -193,7 +193,7 @@ def test_atomic_noreplace_concurrent_destination_wins(
         write_bytes_atomic_noreplace(destination, b"loser")
 
     assert destination.read_bytes() == b"race winner"
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 @pytest.mark.parametrize("failure", ["write", "file-fsync", "link"])
@@ -226,7 +226,7 @@ def test_atomic_noreplace_prelink_failure_creates_no_destination(
         write_bytes_atomic_noreplace(destination, b"payload")
 
     assert not destination.exists()
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 def test_atomic_noreplace_link_return_exception_is_classified_as_committed(
@@ -342,7 +342,7 @@ def test_atomic_noreplace_postlink_failure_preserves_complete_record(
         write_bytes_atomic_noreplace(destination, b"payload")
 
     assert destination.read_bytes() == b"payload"
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 def test_atomic_noreplace_parent_swap_reports_committed_stale_path(
@@ -378,7 +378,7 @@ def test_atomic_noreplace_parent_swap_reports_committed_stale_path(
 
     assert not destination.exists()
     assert (moved_parent / destination.name).read_bytes() == b"payload"
-    assert not list(moved_parent.glob(".heliostune-*.tmp"))
+    assert not list(moved_parent.glob(".quartet-*.tmp"))
 
 
 def test_atomic_noreplace_at_keeps_caller_fd_and_rejects_non_directory(
@@ -450,7 +450,7 @@ def test_atomic_noreplace_at_rejects_bad_bundle_relationship_prelink(
         os.close(output_fd)
 
     assert not (tmp_path / "record.json").exists()
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 def test_atomic_noreplace_at_bundle_rebind_after_link_preserves_record(
@@ -498,7 +498,7 @@ def test_atomic_noreplace_at_bundle_rebind_after_link_preserves_record(
         os.close(output_fd)
 
     assert (tmp_path / "record.json").read_bytes() == b"payload"
-    assert not list(tmp_path.glob(".heliostune-*.tmp"))
+    assert not list(tmp_path.glob(".quartet-*.tmp"))
 
 
 def test_atomic_noreplace_uses_unnamed_inode_and_accepts_long_basename(

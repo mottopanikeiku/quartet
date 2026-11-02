@@ -12,9 +12,9 @@ from typing import Any, cast
 import pytest
 from test_remote_execution import _aborted_result, _envelope, _failed_compile_result, _intent
 
-import heliostune.local_executor as local
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.tooling.remote_execution import (
+import quartet.local_executor as local
+from quartet.errors import ArtifactError, SchemaError
+from quartet.tooling.remote_execution import (
     RemoteIntent,
     RemoteJournalRecord,
     canonical_json_bytes,
@@ -25,7 +25,7 @@ from heliostune.tooling.remote_execution import (
     sha256_bytes,
     verify_remote_receipt,
 )
-from heliostune.tooling.scope import verify_suite
+from quartet.tooling.scope import verify_suite
 
 _REPOSITORY = Path(__file__).resolve().parents[1]
 _SCRIPT = _REPOSITORY / "scripts/reconcile_remote_receipt.py"
@@ -387,7 +387,7 @@ def test_reconcile_publishes_authorized_snapshot_when_source_mutates_after_bound
     mutated: list[bytes] = []
 
     def mkdir_after_boundary(path: Any, mode: int = 0o777, *, dir_fd: int | None = None) -> None:
-        if not mutated and isinstance(path, str) and path.startswith(".heliostune-remote-receipt-"):
+        if not mutated and isinstance(path, str) and path.startswith(".quartet-remote-receipt-"):
             if artifact == "journal":
                 _, changed = _replace_same_length_same_inode(source, b"fc-existing", b"fc-forged00")
             else:
@@ -397,7 +397,7 @@ def test_reconcile_publishes_authorized_snapshot_when_source_mutates_after_bound
             mutated.append(changed)
         original_mkdir(path, mode, dir_fd=dir_fd)
 
-    monkeypatch.setattr("heliostune.tooling.remote_execution.os.mkdir", mkdir_after_boundary)
+    monkeypatch.setattr("quartet.tooling.remote_execution.os.mkdir", mkdir_after_boundary)
     published = script.reconcile_remote_receipt(
         case.output,
         repository=case.repository,

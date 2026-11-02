@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from heliostune.tooling.artifacts import read_json, read_measurements
-from heliostune.v2_addendum import build_v2_addendum_summary
+from quartet.tooling.artifacts import read_json, read_measurements
+from quartet.v2_addendum import build_v2_addendum_summary
 
 _REPO = Path(__file__).resolve().parents[1]
 

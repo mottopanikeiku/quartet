@@ -9,8 +9,8 @@ from typing import Any, cast
 
 import pytest
 
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.tooling.remote_execution import RemoteIntent, verify_remote_receipt_payloads
+from quartet.errors import ArtifactError, SchemaError
+from quartet.tooling.remote_execution import RemoteIntent, verify_remote_receipt_payloads
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/publish_native_rmsnorm_h100.py"

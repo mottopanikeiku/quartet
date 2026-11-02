@@ -11,9 +11,9 @@ from typing import Any, cast
 
 import pytest
 
-from heliostune.errors import SchemaError
-from heliostune.local_executor import CapabilityProbe, TensorMaterialization
-from heliostune.native_fusion_executor import (
+from quartet.errors import SchemaError
+from quartet.local_executor import CapabilityProbe, TensorMaterialization
+from quartet.native_fusion_executor import (
     _CONFIG,
     _ENTRYPOINT,
     _RUNTIME_ARMS,
@@ -40,7 +40,7 @@ from heliostune.native_fusion_executor import (
     _validate_frozen_suite,
     run_native_fusion_suite,
 )
-from heliostune.tooling.scope import verify_suite
+from quartet.tooling.scope import verify_suite
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SUITE = _ROOT / "benchmarks/suites/residual-rmsnorm-triton-v1.json"
@@ -82,7 +82,7 @@ def _available() -> CapabilityProbe:
 
 @pytest.fixture
 def aborted(monkeypatch: pytest.MonkeyPatch) -> NativeFusionExecutionResult:
-    import heliostune.native_fusion_executor as executor
+    import quartet.native_fusion_executor as executor
 
     monkeypatch.setattr(executor, "_probe_capability", lambda: (_unavailable(), None, None))
     return run_native_fusion_suite(_SUITE)
@@ -102,7 +102,7 @@ def test_frozen_digest_and_cpu_import_safety() -> None:
     assert hashlib.sha256(payload).hexdigest() == NATIVE_RMSNORM_SUITE_SHA256
 
     # Reloading the executor itself must not ask importlib for either optional GPU package.
-    module = importlib.import_module("heliostune.native_fusion_executor")
+    module = importlib.import_module("quartet.native_fusion_executor")
     assert "torch" not in module.__dict__
     assert "triton" not in module.__dict__
     inventory = _capture_executor_sources()
@@ -307,7 +307,7 @@ def test_native_capability_probe_preserves_exact_failure_shape(
     available: bool,
     triton_version: str | None,
 ) -> None:
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     fake_torch = SimpleNamespace()
 
@@ -570,7 +570,7 @@ def test_frozen_validation_precedes_capability_or_torch_import(
         called = True
         raise AssertionError("capability probe must not run")
 
-    import heliostune.native_fusion_executor as executor
+    import quartet.native_fusion_executor as executor
 
     monkeypatch.setattr(executor, "_probe_capability", forbidden)
     with pytest.raises(SchemaError, match="digest"):
@@ -588,7 +588,7 @@ def test_closed_entrypoint_dispatch_is_role_independent() -> None:
 
 
 def test_serialization_order_and_correctness_keys_match_suite_and_v1_formula() -> None:
-    from heliostune.local_executor import _correctness_gate_key
+    from quartet.local_executor import _correctness_gate_key
 
     suite = verify_suite(_SUITE).suite
     assert tuple(arm.id for arm in suite.arms) == _RUNTIME_ARMS
@@ -755,7 +755,7 @@ def test_profile_runtime_filters_non_cuda_events_with_strict_cpu_fakes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
 
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     cuda_type = object()
     cpu_type = object()
@@ -817,7 +817,7 @@ def test_profile_runtime_filters_non_cuda_events_with_strict_cpu_fakes(
 def test_profile_retains_launch_progress_when_profiler_events_fail(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     cuda_type = object()
 
@@ -871,7 +871,7 @@ def test_profile_retains_launch_progress_when_profiler_events_fail(
 def test_profile_retains_event_and_output_evidence_when_input_revalidation_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     cuda_type = object()
     event_name = "residual_rmsnorm_kernel"
@@ -1322,8 +1322,8 @@ def test_parser_binds_observation_keys_timing_shape_and_attempt_reason(
 def test_materialization_failure_returns_terminal_failed_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import heliostune.local_executor as legacy
-    import heliostune.native_fusion_executor as executor
+    import quartet.local_executor as legacy
+    import quartet.native_fusion_executor as executor
 
     monkeypatch.setattr(
         executor, "_probe_capability", lambda: (_available(), SimpleNamespace(), "3.4.0")
@@ -1385,9 +1385,9 @@ def _fake_materialization(arm: str) -> TensorMaterialization:
 
 
 def _install_native_pipeline_fakes(monkeypatch: pytest.MonkeyPatch) -> Any:
-    import heliostune.fusion_kernels as fusion
-    import heliostune.local_executor as legacy
-    import heliostune.native_fusion_executor as executor
+    import quartet.fusion_kernels as fusion
+    import quartet.local_executor as legacy
+    import quartet.native_fusion_executor as executor
 
     fake_torch = SimpleNamespace()
     monkeypatch.setattr(executor, "_probe_capability", lambda: (_available(), fake_torch, "3.4.0"))
@@ -1452,8 +1452,8 @@ def _fake_compiled_resource(compiled: object, config: object) -> dict[str, objec
 def test_passing_correctness_cannot_bypass_paid_validation_or_profile_failure(
     monkeypatch: pytest.MonkeyPatch, failing_gate: str, failure_kind: str
 ) -> None:
-    import heliostune.local_executor as legacy
-    import heliostune.native_fusion_executor as executor
+    import quartet.local_executor as legacy
+    import quartet.native_fusion_executor as executor
 
     fusion = _install_native_pipeline_fakes(monkeypatch)
     fake_torch = SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda _device: None))
@@ -1643,9 +1643,9 @@ def test_loader_failure_retains_passing_resource_and_drives_compile_stage_failur
 def test_oracle_failure_retains_compile_resource_and_terminalizes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import heliostune.fusion_kernels as fusion
-    import heliostune.local_executor as legacy
-    import heliostune.native_fusion_executor as executor
+    import quartet.fusion_kernels as fusion
+    import quartet.local_executor as legacy
+    import quartet.native_fusion_executor as executor
 
     fake_torch = SimpleNamespace()
     monkeypatch.setattr(executor, "_probe_capability", lambda: (_available(), fake_torch, "3.4.0"))
@@ -1745,7 +1745,7 @@ def test_oracle_failure_retains_compile_resource_and_terminalizes(
 def test_correctness_runtime_defends_repeatability_and_value_custody(
     monkeypatch: pytest.MonkeyPatch, mode: str, failure_kind: str | None
 ) -> None:
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     class Tensor:
         def __init__(
@@ -1849,7 +1849,7 @@ def test_validation_runtime_exceptions_fail_closed_for_every_probe() -> None:
 def test_validation_runtime_binds_all_structured_probe_checks(
     monkeypatch: pytest.MonkeyPatch, close: bool
 ) -> None:
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     class Tensor:
         next_pointer = 1
@@ -1969,7 +1969,7 @@ def test_validation_runtime_binds_all_structured_probe_checks(
 def test_timing_runtime_never_preserves_passed_status_after_failure(
     monkeypatch: pytest.MonkeyPatch, failure_mode: str, failure_kind: str
 ) -> None:
-    import heliostune.local_executor as legacy
+    import quartet.local_executor as legacy
 
     hashes = iter(("before", "after" if failure_mode == "mutation" else "before"))
     monkeypatch.setattr(legacy, "_tensor_hash", lambda _torch, _tensor: next(hashes))

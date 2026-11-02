@@ -9,18 +9,18 @@ from typing import cast
 
 import pytest
 
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.local_executor import CapabilityProbe
-from heliostune.native_fusion_executor import NativeFusionExecutionResult, run_native_fusion_suite
-from heliostune.tooling.artifacts import strict_json_dumps, strict_json_loads
-from heliostune.tooling.methodology import encode_attempt_journal, verify_bundle_v1
-from heliostune.tooling.native_fusion_bundle import (
+from quartet.errors import ArtifactError, SchemaError
+from quartet.local_executor import CapabilityProbe
+from quartet.native_fusion_executor import NativeFusionExecutionResult, run_native_fusion_suite
+from quartet.tooling.artifacts import strict_json_dumps, strict_json_loads
+from quartet.tooling.methodology import encode_attempt_journal, verify_bundle_v1
+from quartet.tooling.native_fusion_bundle import (
     _attempt_journal,
     preflight_native_fusion_bundle,
     write_native_fusion_bundle,
 )
-from heliostune.tooling.scope import verify_plugin
-from heliostune.tooling.wheel_verifier import source_digest, source_entries
+from quartet.tooling.scope import verify_plugin
+from quartet.tooling.wheel_verifier import source_digest, source_entries
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SUITE = _ROOT / "benchmarks/suites/residual-rmsnorm-triton-v1.json"
@@ -71,7 +71,7 @@ def _unavailable() -> CapabilityProbe:
 
 @pytest.fixture
 def aborted(monkeypatch: pytest.MonkeyPatch) -> NativeFusionExecutionResult:
-    import heliostune.native_fusion_executor as executor
+    import quartet.native_fusion_executor as executor
 
     monkeypatch.setattr(executor, "_probe_capability", lambda: (_unavailable(), None, None))
     return run_native_fusion_suite(_SUITE)
@@ -280,7 +280,7 @@ def test_native_evidence_roles_are_lossless_and_sources_are_hashed(
         "native_fusion_executor.py",
         "local_executor.py",
     ]
-    package_file = __import__("heliostune").__file__
+    package_file = __import__("quartet").__file__
     assert package_file is not None
     package_dir = Path(package_file).resolve().parent
     package_entries = source_entries(package_dir)

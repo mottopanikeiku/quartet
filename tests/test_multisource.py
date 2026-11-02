@@ -12,10 +12,10 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from heliostune.configs import KernelConfig, Workload
-from heliostune.errors import SchemaError
-from heliostune.multisource import compare_multisource
-from heliostune.multisource_engine import (
+from quartet.configs import KernelConfig, Workload
+from quartet.errors import SchemaError
+from quartet.multisource import compare_multisource
+from quartet.multisource_engine import (
     PreparedReplay,
     _best_observed,
     _incumbent_value,
@@ -31,9 +31,9 @@ from heliostune.multisource_engine import (
     serialize_workload_endpoints,
     validate_release_provenance,
 )
-from heliostune.replay import compare_methods
-from heliostune.schema import HardwareProfile, Measurement
-from heliostune.tooling.artifacts import read_measurements
+from quartet.replay import compare_methods
+from quartet.schema import HardwareProfile, Measurement
+from quartet.tooling.artifacts import read_measurements
 
 _CONFIGS = (
     KernelConfig(16, 32, 32, 4, 2),

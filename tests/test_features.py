@@ -3,20 +3,20 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_CONFIGS,
     DEFAULT_WORKLOADS,
     PARHELION_V3_CANDIDATE_CONFIGS,
     PARHELION_V3_OFFICIAL_CONFIG_KEYS,
 )
-from heliostune.features import (
+from quartet.features import (
     V2_FEATURE_NAMES,
     V3_FEATURE_NAMES,
     v2_joint_features,
     v3_feature_rank,
     v3_joint_features,
 )
-from heliostune.schema import HardwareProfile
+from quartet.schema import HardwareProfile
 
 _PROFILES = (
     HardwareProfile("L4", "NVIDIA L4", (8, 9), 58, 22.0343017578125),

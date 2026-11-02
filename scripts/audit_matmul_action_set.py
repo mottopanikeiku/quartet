@@ -9,9 +9,9 @@ import math
 from pathlib import Path
 from typing import Any
 
-from heliostune.replay import BenchmarkTable
-from heliostune.tooling.artifacts import read_measurements
-from heliostune.tooling.matmul_audit import build_audit, gpu_overview, render_by_m, render_shapes
+from quartet.replay import BenchmarkTable
+from quartet.tooling.artifacts import read_measurements
+from quartet.tooling.matmul_audit import build_audit, gpu_overview, render_by_m, render_shapes
 
 _REPO = Path(__file__).resolve().parents[1]
 _INPUT = "benchmarks/data/parhelion-v2-measurements.jsonl.zst"

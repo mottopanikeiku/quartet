@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from heliostune.action_configs import (
+from quartet.action_configs import (
     NON_SPLIT_CANDIDATES,
     SPLIT_K_CANDIDATES,
     ActionCandidate,
@@ -21,7 +21,7 @@ def gpu_modules() -> tuple[Any, Any]:
         pytest.skip("the pinned PyTorch 2.8/Triton 3.4 stack is unavailable")
     if torch.cuda.get_device_capability()[0] < 8:
         pytest.skip("these tensor-core candidates require Ampere or newer")
-    from heliostune import action_expansion
+    from quartet import action_expansion
 
     return torch, action_expansion
 
@@ -91,7 +91,7 @@ def test_launch_propagates_failures_without_another_implementation(
 ) -> None:
     pytest.importorskip("torch")
     pytest.importorskip("triton")
-    from heliostune import action_expansion
+    from quartet import action_expansion
 
     candidate = next(c for c in (*NON_SPLIT_CANDIDATES, *SPLIT_K_CANDIDATES) if c.family == family)
     failure = RuntimeError("requested kernel failed")

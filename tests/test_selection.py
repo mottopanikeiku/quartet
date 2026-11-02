@@ -6,9 +6,9 @@ from typing import Any
 
 import pytest
 
-import heliostune.selection as selection_module
-from heliostune.selection import ParhelionCandidate, parhelion_grid, select_parhelion
-from heliostune.tooling.artifacts import read_measurements
+import quartet.selection as selection_module
+from quartet.selection import ParhelionCandidate, parhelion_grid, select_parhelion
+from quartet.tooling.artifacts import read_measurements
 
 EXPECTED_GRID = tuple(
     ParhelionCandidate(k, temperature, transfer_strength)

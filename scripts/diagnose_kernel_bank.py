@@ -16,15 +16,15 @@ import zstandard
 from analyze_action_expansion import analyze
 from analyze_hopper_benchmark import analyze_artifact
 
-from heliostune.configs import DEFAULT_WORKLOADS, Workload
-from heliostune.tooling.artifacts import (
+from quartet.configs import DEFAULT_WORKLOADS, Workload
+from quartet.tooling.artifacts import (
     read_json,
     read_measurements,
     strict_json_dumps,
     strict_json_loads,
 )
-from heliostune.tooling.bank_diagnosis import Cell, diagnose, expansion_view, shared_cells
-from heliostune.tooling.kernel_dossier import build_dossier
+from quartet.tooling.bank_diagnosis import Cell, diagnose, expansion_view, shared_cells
+from quartet.tooling.kernel_dossier import build_dossier
 
 _REPO = Path(__file__).resolve().parents[1]
 _DEFAULT_OUTPUT = _REPO / "results/kernel-bank-diagnosis.json"

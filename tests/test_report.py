@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from heliostune.tooling.report import render_report
+from quartet.tooling.report import render_report
 
 
 def test_report_is_offline_and_escapes_dynamic_text(tmp_path: Path) -> None:

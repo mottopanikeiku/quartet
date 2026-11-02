@@ -1,4 +1,4 @@
-"""Collect HeliosTune matrices with durable paid-call journaling on Modal."""
+"""Collect quartet matrices with durable paid-call journaling on Modal."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from typing import Any, cast
 import modal
 
 # PEP 427 wheel filename: distribution-version(-build)?-python-abi-platform.whl. No
-# component may contain "-", so pip refuses names such as "heliostune.whl" or
-# "heliostune-0.4.0.whl"; commit 0486126 fixed exactly that install failure by
+# component may contain "-", so pip refuses names such as "quartet.whl" or
+# "quartet-0.4.0.whl"; commit 0486126 fixed exactly that install failure by
 # preserving the built filename inside the container.
 _WHEEL_FILENAME = re.compile(
     r"[A-Za-z0-9_.]+"
@@ -51,15 +51,15 @@ def _sha256_file(path: Path) -> str:
 
 
 def _source_digest(repository: Path) -> str:
-    package = repository / "src/heliostune"
+    package = repository / "src/quartet"
     if not package.is_dir():
-        raise RuntimeError(f"HeliosTune source directory does not exist: {package}")
+        raise RuntimeError(f"quartet source directory does not exist: {package}")
     digest = hashlib.sha256()
     paths = sorted(
         path for path in package.rglob("*") if path.is_file() and "__pycache__" not in path.parts
     )
     for path in paths:
-        name = f"heliostune/{path.relative_to(package).as_posix()}"
+        name = f"quartet/{path.relative_to(package).as_posix()}"
         digest.update(name.encode())
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
@@ -120,10 +120,10 @@ def validate_wheel_manifest(
     remote: bool = False,
 ) -> Path:
     """Validate the wheel's byte binding, and its source/HEAD binding when local."""
-    configured_manifest = os.environ.get("HELIOSTUNE_MODAL_WHEEL_MANIFEST")
+    configured_manifest = os.environ.get("QUARTET_MODAL_WHEEL_MANIFEST")
     if remote:
         if not configured_manifest:
-            raise RuntimeError("HELIOSTUNE_MODAL_WHEEL_MANIFEST is required for a remote wheel")
+            raise RuntimeError("QUARTET_MODAL_WHEEL_MANIFEST is required for a remote wheel")
         manifest = Path(configured_manifest)
         if manifest != wheel_manifest_path(wheel):
             raise RuntimeError("remote Modal wheel manifest must be adjacent to the wheel")
@@ -190,16 +190,16 @@ def validate_wheel_manifest(
 def configured_modal_wheel(root: Path | None = None) -> Path:
     """Return the single manifest-validated wheel to bake into the Modal image."""
     base = _REPO if root is None else root.resolve()
-    configured = os.environ.get("HELIOSTUNE_MODAL_WHEEL")
+    configured = os.environ.get("QUARTET_MODAL_WHEEL")
     if configured:
         wheel = Path(configured)
         if not wheel.is_file():
-            raise RuntimeError(f"HELIOSTUNE_MODAL_WHEEL does not exist: {wheel}")
+            raise RuntimeError(f"QUARTET_MODAL_WHEEL does not exist: {wheel}")
         remote = wheel.is_absolute() and wheel.parent == Path("/root")
         validate_wheel_manifest(wheel, repository=base, remote=remote)
         return wheel
     directory = base / _WHEEL_DIRECTORY
-    wheels = tuple(sorted(directory.glob("heliostune-*.whl")))
+    wheels = tuple(sorted(directory.glob("quartet-*.whl")))
     if len(wheels) != 1:
         raise RuntimeError(
             "run `uv run python scripts/build_modal_wheel.py` before Modal; "
@@ -234,14 +234,14 @@ def build_image(wheel: Path) -> modal.Image:
         .run_commands(f"python -m pip install --no-deps {wheel_remote}")
         .env(
             {
-                "HELIOSTUNE_MODAL_WHEEL": wheel_remote,
-                "HELIOSTUNE_MODAL_WHEEL_MANIFEST": manifest_remote,
+                "QUARTET_MODAL_WHEEL": wheel_remote,
+                "QUARTET_MODAL_WHEEL_MANIFEST": manifest_remote,
             }
         )
     )
 
 
-app = modal.App("heliostune-bench")
+app = modal.App("quartet-bench")
 # Modal binds the image when `@app.function` decorates, so the wheel lookup cannot be
 # deferred into the entrypoint. This single call is the module's only import-time file
 # access, and it is module-relative rather than cwd-relative.
@@ -257,13 +257,13 @@ def _remote_collect(
     config_keys: tuple[str, ...],
     seed_protocol: str,
 ) -> list[dict[str, Any]]:
-    from heliostune.configs import (
+    from quartet.configs import (
         DEFAULT_WORKLOADS,
         PARHELION_V3_CANDIDATE_CONFIGS,
     )
-    from heliostune.hardware import expectation_for_gpu, validate_hardware
-    from heliostune.kernel import collect_benchmarks, get_hardware_profile
-    from heliostune.tooling.protocol import v3_seed
+    from quartet.hardware import expectation_for_gpu, validate_hardware
+    from quartet.kernel import collect_benchmarks, get_hardware_profile
+    from quartet.tooling.protocol import v3_seed
 
     workloads_by_key = {workload.key: workload for workload in DEFAULT_WORKLOADS}
     configs_by_key = {config.key: config for config in PARHELION_V3_CANDIDATE_CONFIGS}
@@ -456,7 +456,7 @@ def _resolve_wheel(path: str) -> Path:
     if wheel.resolve() != baked.resolve():
         raise ValueError(
             "--wheel must match the wheel baked into the image; set "
-            "HELIOSTUNE_MODAL_WHEEL before `modal run` to choose another wheel"
+            "QUARTET_MODAL_WHEEL before `modal run` to choose another wheel"
         )
     return wheel
 
@@ -480,15 +480,15 @@ def _selected_manifests(
     protocol_path: Path | None,
     config_path: Path | None,
 ) -> tuple[tuple[str, ...], tuple[str, ...], str]:
-    from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS
-    from heliostune.tooling.artifacts import read_json
-    from heliostune.tooling.protocol import (
+    from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS
+    from quartet.tooling.artifacts import read_json
+    from quartet.tooling.protocol import (
         V3_PILOT_CONFIG_KEYS,
         V3_PILOT_WORKLOAD_KEYS,
         load_v3_protocol,
         require_v3_runtime,
     )
-    from heliostune.validation import exact_object
+    from quartet.validation import exact_object
 
     if protocol_path is None:
         configs = DEFAULT_CONFIGS[:3] if pilot else DEFAULT_CONFIGS
@@ -537,7 +537,7 @@ def main(
     config_manifest: str = "",
     wheel: str = "",
 ) -> None:
-    from heliostune.collection import (
+    from quartet.collection import (
         CallPlanItem,
         CollectionBinding,
         CollectionRequest,
@@ -547,7 +547,7 @@ def main(
         preflight_collection,
         sha256_file,
     )
-    from heliostune.tooling.artifacts import strict_json_dumps
+    from quartet.tooling.artifacts import strict_json_dumps
 
     gpu_names = _strict_csv(gpus, label="gpus")
     bank_values = _strict_banks(banks)

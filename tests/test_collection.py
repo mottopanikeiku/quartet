@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from heliostune.collection import (
+from quartet.collection import (
     AttemptJournal,
     CallPlanItem,
     CollectionBinding,
@@ -18,16 +18,16 @@ from heliostune.collection import (
     manifest_path,
     preflight_collection,
 )
-from heliostune.configs import KernelConfig, Workload
-from heliostune.errors import ArtifactError, ProtocolError, SchemaError
-from heliostune.schema import HardwareProfile, Measurement
-from heliostune.tooling.artifacts import (
+from quartet.configs import KernelConfig, Workload
+from quartet.errors import ArtifactError, ProtocolError, SchemaError
+from quartet.schema import HardwareProfile, Measurement
+from quartet.tooling.artifacts import (
     read_json,
     read_measurements,
     write_json_atomic,
     write_text_atomic,
 )
-from heliostune.tooling.protocol import v3_seed
+from quartet.tooling.protocol import v3_seed
 
 _WORKLOADS = (
     Workload(1, 32, 32, "alpha", "attention", "decode"),

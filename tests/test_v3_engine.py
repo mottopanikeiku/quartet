@@ -7,13 +7,13 @@ from types import ModuleType
 
 import pytest
 
-import heliostune.v3_engine as engine
-from heliostune.configs import (
+import quartet.v3_engine as engine
+from quartet.configs import (
     PARHELION_V3_CANDIDATE_CONFIGS,
     PARHELION_V3_OFFICIAL_CONFIG_KEYS,
     Workload,
 )
-from heliostune.schema import HardwareProfile, Measurement
+from quartet.schema import HardwareProfile, Measurement
 
 _CONFIGS = tuple(sorted(PARHELION_V3_CANDIDATE_CONFIGS[:16], key=lambda item: item.key))
 _WORKLOADS = (

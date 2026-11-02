@@ -13,8 +13,8 @@ from xml.etree import ElementTree
 
 import pytest
 
-from heliostune.action_configs import action_set_manifest, candidates_for
-from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, Workload
+from quartet.action_configs import action_set_manifest, candidates_for
+from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, Workload
 
 _REPO = Path(__file__).resolve().parents[1]
 _PATH = _REPO / "scripts/analyze_action_expansion.py"

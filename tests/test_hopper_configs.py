@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import pytest
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_CONFIGS,
     DEFAULT_WORKLOADS,
     HOPPER_GEMM_CONFIGS,
@@ -15,7 +15,7 @@ from heliostune.configs import (
     SkinnyGemvConfig,
     Workload,
 )
-from heliostune.errors import SchemaError
+from quartet.errors import SchemaError
 
 
 def test_committed_manifests_keep_their_frozen_sizes_and_record_types() -> None:

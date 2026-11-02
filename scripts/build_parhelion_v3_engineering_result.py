@@ -12,16 +12,16 @@ from typing import cast
 
 import numpy as np
 
-from heliostune.tooling.artifacts import (
+from quartet.tooling.artifacts import (
     read_json,
     read_measurements,
     strict_json_dumps,
     write_bytes_atomic,
 )
-from heliostune.tooling.protocol import load_v3_protocol, require_v3_runtime, runtime_manifest
-from heliostune.tooling.v3_artifacts import sha256_file
-from heliostune.uncertainty import paired_contrast
-from heliostune.v3_engine import (
+from quartet.tooling.protocol import load_v3_protocol, require_v3_runtime, runtime_manifest
+from quartet.tooling.v3_artifacts import sha256_file
+from quartet.uncertainty import paired_contrast
+from quartet.v3_engine import (
     V3Evaluation,
     V3Prepared,
     evaluate_v3_anchored_cold,
@@ -36,7 +36,7 @@ from heliostune.v3_engine import (
     evaluation_seed_curves,
     prepare_v3,
 )
-from heliostune.validation import exact_int, exact_object, finite_float
+from quartet.validation import exact_int, exact_object, finite_float
 
 _REPO = Path(__file__).resolve().parents[1]
 _FREEZE = _REPO / "benchmarks/parhelion-v3-h200-freeze.json"
@@ -49,7 +49,7 @@ _FINAL_MANIFEST = _REPO / "benchmarks/data/parhelion-v3-final.jsonl.zst.manifest
 _OUTPUT = _REPO / "benchmarks/results/parhelion-v3-h200-engineering.json"
 _REPORT = _REPO / "site/parhelion-v3-engineering.html"
 _DERIVATION_MANIFEST = _REPO / "benchmarks/parhelion-v3-h200-engineering-derivation-manifest.json"
-_SOURCE_ROOT = _REPO / "src/heliostune"
+_SOURCE_ROOT = _REPO / "src/quartet"
 _DEPENDENCY_CONTRACT = (
     _REPO / "pyproject.toml",
     _REPO / "uv.lock",

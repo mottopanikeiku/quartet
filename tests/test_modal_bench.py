@@ -16,7 +16,7 @@ import pytest
 _REPO = Path(__file__).resolve().parents[1]
 _MODULE = _REPO / "modal_bench.py"
 _BUILDER_MODULE = _REPO / "scripts/build_modal_wheel.py"
-_WHEEL_NAME = "heliostune-0.4.0-py3-none-any.whl"
+_WHEEL_NAME = "quartet-0.4.0-py3-none-any.whl"
 _HEAD = "a" * 40
 _PIP_DEPENDENCIES = [
     "numpy==2.4.6",
@@ -28,13 +28,13 @@ _PIP_DEPENDENCIES = [
 
 
 def _source_digest(repository: Path) -> str:
-    package = repository / "src/heliostune"
+    package = repository / "src/quartet"
     digest = hashlib.sha256()
     paths = sorted(
         item for item in package.rglob("*") if item.is_file() and "__pycache__" not in item.parts
     )
     for path in paths:
-        name = f"heliostune/{path.relative_to(package).as_posix()}"
+        name = f"quartet/{path.relative_to(package).as_posix()}"
         digest.update(name.encode())
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
@@ -128,8 +128,8 @@ def modal_bench(tmp_path_factory: pytest.TempPathFactory) -> ModuleType:
     wheel, manifest = _write_wheel_and_manifest(
         tmp_path_factory.mktemp("import-wheel"), repository=_REPO
     )
-    previous_wheel = os.environ.get("HELIOSTUNE_MODAL_WHEEL")
-    previous_manifest = os.environ.get("HELIOSTUNE_MODAL_WHEEL_MANIFEST")
+    previous_wheel = os.environ.get("QUARTET_MODAL_WHEEL")
+    previous_manifest = os.environ.get("QUARTET_MODAL_WHEEL_MANIFEST")
     previous_modal = sys.modules.get("modal")
     real_run = subprocess.run
 
@@ -137,8 +137,8 @@ def modal_bench(tmp_path_factory: pytest.TempPathFactory) -> ModuleType:
         output = "" if arguments[1:3] == ["status", "--porcelain"] else f"{_HEAD}\n"
         return SimpleNamespace(stdout=output)
 
-    os.environ["HELIOSTUNE_MODAL_WHEEL"] = str(wheel)
-    os.environ.pop("HELIOSTUNE_MODAL_WHEEL_MANIFEST", None)
+    os.environ["QUARTET_MODAL_WHEEL"] = str(wheel)
+    os.environ.pop("QUARTET_MODAL_WHEEL_MANIFEST", None)
     sys.modules["modal"] = _fake_modal()
     subprocess.run = clean_git  # type: ignore[assignment]
     try:
@@ -153,19 +153,19 @@ def modal_bench(tmp_path_factory: pytest.TempPathFactory) -> ModuleType:
         else:
             sys.modules["modal"] = previous_modal
         if previous_wheel is None:
-            del os.environ["HELIOSTUNE_MODAL_WHEEL"]
+            del os.environ["QUARTET_MODAL_WHEEL"]
         else:
-            os.environ["HELIOSTUNE_MODAL_WHEEL"] = previous_wheel
+            os.environ["QUARTET_MODAL_WHEEL"] = previous_wheel
         if previous_manifest is None:
-            os.environ.pop("HELIOSTUNE_MODAL_WHEEL_MANIFEST", None)
+            os.environ.pop("QUARTET_MODAL_WHEEL_MANIFEST", None)
         else:
-            os.environ["HELIOSTUNE_MODAL_WHEEL_MANIFEST"] = previous_manifest
+            os.environ["QUARTET_MODAL_WHEEL_MANIFEST"] = previous_manifest
     assert manifest.is_file()
     return module
 
 
 def _tiny_repository(tmp_path: Path) -> Path:
-    package = tmp_path / "src/heliostune"
+    package = tmp_path / "src/quartet"
     package.mkdir(parents=True)
     (package / "__init__.py").write_text("VALUE = 1\n", encoding="utf-8")
     return tmp_path
@@ -190,7 +190,7 @@ def test_wheel_builder_sanitizes_index_overrides(monkeypatch: pytest.MonkeyPatch
 
 
 def test_import_binds_app_and_image_without_modal_install(modal_bench: ModuleType) -> None:
-    assert modal_bench.app.name == "heliostune-bench"
+    assert modal_bench.app.name == "quartet-bench"
     assert modal_bench.image is not None
 
 
@@ -237,7 +237,7 @@ def test_remote_manifest_checks_bytes_without_git(
 ) -> None:
     repository = _tiny_repository(tmp_path / "repo")
     wheel, manifest = _write_wheel_and_manifest(tmp_path / "remote", repository=repository)
-    monkeypatch.setenv("HELIOSTUNE_MODAL_WHEEL_MANIFEST", str(manifest))
+    monkeypatch.setenv("QUARTET_MODAL_WHEEL_MANIFEST", str(manifest))
 
     def forbidden_git(_root: Path) -> str:
         raise AssertionError("remote validation must not run git")
@@ -268,8 +268,8 @@ def test_build_image_copies_manifest_and_installs_without_dependencies(
     assert (
         "env",
         {
-            "HELIOSTUNE_MODAL_WHEEL": f"/root/{_WHEEL_NAME}",
-            "HELIOSTUNE_MODAL_WHEEL_MANIFEST": f"/root/{_WHEEL_NAME}.manifest.json",
+            "QUARTET_MODAL_WHEEL": f"/root/{_WHEEL_NAME}",
+            "QUARTET_MODAL_WHEEL_MANIFEST": f"/root/{_WHEEL_NAME}.manifest.json",
         },
     ) in operations
 

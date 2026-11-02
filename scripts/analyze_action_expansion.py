@@ -17,11 +17,11 @@ from html import escape
 from pathlib import Path
 from typing import Any, cast
 
-from heliostune.action_collection import RUNNERS, validate_run_id
-from heliostune.action_configs import action_set_manifest, candidates_for
-from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, Workload
-from heliostune.tooling.artifacts import read_json, strict_json_dumps
-from heliostune.validation import (
+from quartet.action_collection import RUNNERS, validate_run_id
+from quartet.action_configs import action_set_manifest, candidates_for
+from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, Workload
+from quartet.tooling.artifacts import read_json, strict_json_dumps
+from quartet.validation import (
     exact_bool,
     exact_fields,
     exact_int,

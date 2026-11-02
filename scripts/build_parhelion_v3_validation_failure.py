@@ -8,10 +8,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
-from heliostune.collection import AttemptJournal, AttemptRecord
-from heliostune.tooling.artifacts import read_json, write_bytes_atomic, write_json_atomic
-from heliostune.tooling.protocol import load_v3_protocol, require_v3_runtime
-from heliostune.tooling.v3_artifacts import sha256_file
+from quartet.collection import AttemptJournal, AttemptRecord
+from quartet.tooling.artifacts import read_json, write_bytes_atomic, write_json_atomic
+from quartet.tooling.protocol import load_v3_protocol, require_v3_runtime
+from quartet.tooling.v3_artifacts import sha256_file
 
 _REPO = Path(__file__).resolve().parents[1]
 _PROTOCOL = _REPO / "benchmarks/parhelion-v3-development-protocol.json"

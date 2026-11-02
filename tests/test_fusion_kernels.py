@@ -12,7 +12,7 @@ from typing import Any, NamedTuple
 
 import pytest
 
-from heliostune.fusion_kernels import (
+from quartet.fusion_kernels import (
     RESIDUAL_RMSNORM_CONFIG_BY_ENTRYPOINT,
     RESIDUAL_RMSNORM_CONFIGS,
     RMSNormTritonConfig,
@@ -22,8 +22,8 @@ from heliostune.fusion_kernels import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-CPU_SOURCE = ROOT / "src" / "heliostune" / "fusion_kernels.py"
-GPU_SOURCE = ROOT / "src" / "heliostune" / "_fusion_gpu.py"
+CPU_SOURCE = ROOT / "src" / "quartet" / "fusion_kernels.py"
+GPU_SOURCE = ROOT / "src" / "quartet" / "_fusion_gpu.py"
 GPU_TEXT = GPU_SOURCE.read_text(encoding="utf-8")
 GPU_TREE = ast.parse(GPU_TEXT)
 
@@ -94,8 +94,8 @@ def test_cpu_module_import_does_not_load_gpu_dependencies() -> None:
             sys.executable,
             "-c",
             (
-                "import sys, heliostune.fusion_kernels; "
-                "assert 'heliostune._fusion_gpu' not in sys.modules; "
+                "import sys, quartet.fusion_kernels; "
+                "assert 'quartet._fusion_gpu' not in sys.modules; "
                 "assert 'torch' not in sys.modules; "
                 "assert 'triton' not in sys.modules"
             ),
@@ -262,19 +262,19 @@ def test_row_kernel_enforces_fp32_math_bf16_output_and_no_input_mutation() -> No
 
 
 def test_invalid_entrypoint_fails_before_lazy_gpu_import(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delitem(sys.modules, "heliostune._fusion_gpu", raising=False)
+    monkeypatch.delitem(sys.modules, "quartet._fusion_gpu", raising=False)
     with pytest.raises(ValueError, match="unknown residual RMSNorm entrypoint"):
         load_residual_rmsnorm("os.system")
-    assert "heliostune._fusion_gpu" not in sys.modules
+    assert "quartet._fusion_gpu" not in sys.modules
 
 
 def test_invalid_compile_entrypoint_fails_before_lazy_gpu_import(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delitem(sys.modules, "heliostune._fusion_gpu", raising=False)
+    monkeypatch.delitem(sys.modules, "quartet._fusion_gpu", raising=False)
     with pytest.raises(ValueError, match="unknown residual RMSNorm entrypoint"):
         compile_residual_rmsnorm("os.system", object(), object(), object())
-    assert "heliostune._fusion_gpu" not in sys.modules
+    assert "quartet._fusion_gpu" not in sys.modules
 
 
 def test_gpu_compile_path_warms_without_launch_and_touches_run_handle(
@@ -486,7 +486,7 @@ def test_gpu_smoke_matches_fp32_reference_when_pinned_cuda_stack_is_available() 
     if not torch.__version__.startswith("2.8.0") or triton.__version__ != "3.4.0":
         pytest.skip("the pinned PyTorch 2.8/Triton 3.4 stack is unavailable")
 
-    from heliostune._fusion_gpu import load_residual_rmsnorm as load_gpu
+    from quartet._fusion_gpu import load_residual_rmsnorm as load_gpu
 
     torch.manual_seed(17)
     x = torch.randn((128, 4096), device="cuda", dtype=torch.bfloat16)

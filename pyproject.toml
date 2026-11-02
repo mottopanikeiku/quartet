@@ -3,7 +3,7 @@ requires = ["hatchling>=1.25,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "heliostune"
+name = "quartet"
 version = "0.6.0.dev0"
 description = "Retrieval-based GPU autotuning for Triton matmul kernels"
 readme = "README.md"
@@ -49,14 +49,14 @@ dev = [
 ]
 
 [project.scripts]
-heliostune = "heliostune.cli:main"
+quartet = "quartet.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/heliostune"]
+packages = ["src/quartet"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/heliostune",
+  "src/quartet",
   "tests",
   "typings",
   "README.md",
@@ -94,10 +94,10 @@ show_error_codes = true
 
 [tool.coverage.run]
 branch = true
-source = ["heliostune"]
+source = ["quartet"]
 # GPU-only JIT modules are gated by the paid pre-timing correctness check; CPU CI
 # cannot import these implementations.
-omit = ["src/heliostune/_fusion_gpu.py", "src/heliostune/hopper_kernel.py", "src/heliostune/action_expansion.py"]
+omit = ["src/quartet/_fusion_gpu.py", "src/quartet/hopper_kernel.py", "src/quartet/action_expansion.py"]
 
 [tool.coverage.report]
 show_missing = true

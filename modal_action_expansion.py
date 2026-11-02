@@ -2,7 +2,7 @@
 
 Each run ID gets its own checkpoint directory in the shared Modal volume, so a fresh
 repeat needs a new ``--run-id``, not a code change. The measurement itself is
-``heliostune.action_expansion.collect_on_device``; ``scripts/collect_action_expansion.py``
+``quartet.action_expansion.collect_on_device``; ``scripts/collect_action_expansion.py``
 runs the same code on any local CUDA machine.
 """
 
@@ -15,7 +15,8 @@ from typing import Any
 
 import modal
 
-from heliostune.action_collection import (
+from modal_bench import build_image, configured_modal_wheel
+from quartet.action_collection import (
     RunSpec,
     checkpoint_path,
     default_output,
@@ -24,13 +25,13 @@ from heliostune.action_collection import (
     package_source_sha256,
     plan_manifest,
 )
-from heliostune.tooling.artifacts import strict_json_dumps, write_bytes_atomic_noreplace
-from modal_bench import build_image, configured_modal_wheel
+from quartet.tooling.artifacts import strict_json_dumps, write_bytes_atomic_noreplace
 
 _REPO = Path(__file__).resolve().parent
 _CHECKPOINTS = Path("/data/runs")
 
-app = modal.App("heliostune-day-actions")
+app = modal.App("quartet-day-actions")
+# The volume name predates the rename and holds the saved checkpoints.
 volume = modal.Volume.from_name("heliostune-day-actions", create_if_missing=True)
 image = (
     build_image(configured_modal_wheel())
@@ -42,11 +43,11 @@ image = (
 def _collect(fields: dict[str, Any]) -> dict[str, Any]:
     import os
 
-    from heliostune.action_expansion import collect_on_device
+    from quartet.action_expansion import collect_on_device
 
     spec = RunSpec(**fields)
     manifest = json.loads(
-        Path(os.environ["HELIOSTUNE_MODAL_WHEEL_MANIFEST"]).read_text(encoding="utf-8")
+        Path(os.environ["QUARTET_MODAL_WHEEL_MANIFEST"]).read_text(encoding="utf-8")
     )
     if manifest["source_sha256"] != spec.source_sha256:
         raise ValueError("the installed wheel does not match the run's source digest")
@@ -92,7 +93,7 @@ def main(run_id: str, pilot: bool = False, output: str = "", dry_run: bool = Fal
         source_commit=commit,
         plan_commit=plan_commit,
         collector_sha256=file_sha256(Path(__file__)),
-        source_sha256=package_source_sha256(_REPO / "src/heliostune"),
+        source_sha256=package_source_sha256(_REPO / "src/quartet"),
     )
     if dry_run:
         print(

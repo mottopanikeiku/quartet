@@ -15,11 +15,11 @@ from typing import Any, cast
 import pytest
 import zstandard
 
-import heliostune.cli as cli
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.multisource_engine import ReleaseProvenance, validate_release_provenance
-from heliostune.tooling.artifacts import write_json_atomic
-from heliostune.tooling.methodology import VerificationLimitations
+import quartet.cli as cli
+from quartet.errors import ArtifactError, SchemaError
+from quartet.multisource_engine import ReleaseProvenance, validate_release_provenance
+from quartet.tooling.artifacts import write_json_atomic
+from quartet.tooling.methodology import VerificationLimitations
 
 
 @pytest.mark.parametrize(
@@ -96,7 +96,7 @@ def test_main_formats_only_expected_user_errors(
     monkeypatch.setattr(cli, "build_parser", lambda: _FakeParser(_raising_handler(error)))
 
     assert cli.main([]) == 2
-    assert capsys.readouterr().err.startswith("heliostune: error: ")
+    assert capsys.readouterr().err.startswith("quartet: error: ")
 
 
 @pytest.mark.parametrize("error", [ValueError("bug"), TypeError("bug"), KeyboardInterrupt()])
@@ -159,7 +159,7 @@ def test_invalid_report_is_normalized_before_output_creation(
 
     assert cli.main(["report", str(source), "--output", str(output)]) == 2
     assert not output.exists()
-    assert "heliostune: error:" in capsys.readouterr().err
+    assert "quartet: error:" in capsys.readouterr().err
 
 
 def test_demo_stages_complete_strict_payloads(tmp_path: Path) -> None:
@@ -801,7 +801,7 @@ def test_verify_bundle_rejects_explicit_text_file_before_verification(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import heliostune.tooling.methodology as methodology
+    import quartet.tooling.methodology as methodology
 
     def forbidden_verify(_path: Path) -> object:
         raise AssertionError("verification must not run")
@@ -833,8 +833,8 @@ def test_verify_bundle_json_stdout_is_exact_canonical_bytes_and_bypasses_rich(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    from heliostune.tooling.methodology import verify_bundle_v1
-    from heliostune.tooling.verification import (
+    from quartet.tooling.methodology import verify_bundle_v1
+    from quartet.tooling.verification import (
         build_verification_record_v1,
         encode_verification_record_v1,
     )
@@ -934,7 +934,7 @@ def test_verify_bundle_failed_control_suppresses_stdout_and_file(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.verification as verification
+    import quartet.tooling.verification as verification
 
     root, _protocol, _attempts, _artifact, _bundle = _methodology_bundle_fixture(tmp_path)
     output = tmp_path / "verification-record.json"
@@ -978,7 +978,7 @@ def test_verify_bundle_record_failure_emits_no_success_output(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.verification as verification
+    import quartet.tooling.verification as verification
 
     root, _protocol, _attempts, _artifact, _bundle = _methodology_bundle_fixture(tmp_path)
     output = tmp_path / "verification-record.json"
@@ -1008,7 +1008,7 @@ def test_verify_bundle_post_commit_error_preserves_record_and_reports_ambiguous_
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.verification as verification
+    import quartet.tooling.verification as verification
 
     root, _protocol, _attempts, _artifact, _bundle = _methodology_bundle_fixture(tmp_path)
     output = tmp_path / "verification-record.json"
@@ -1099,8 +1099,8 @@ def test_verify_bundle_output_collision_preserves_existing_objects(
 def _fake_offline_replay_cli_result(tmp_path: Path) -> tuple[Path, SimpleNamespace]:
     from dataclasses import replace
 
-    from heliostune.tooling.methodology import verify_bundle_v1
-    from heliostune.tooling.verification import build_verification_record_v1
+    from quartet.tooling.methodology import verify_bundle_v1
+    from quartet.tooling.verification import build_verification_record_v1
 
     root, _protocol, _attempts, _artifact, _bundle = _methodology_bundle_fixture(tmp_path)
     verified = verify_bundle_v1(root)
@@ -1188,7 +1188,7 @@ def test_replay_bundle_rejects_explicit_text_file_before_replay(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
+    import quartet.tooling.offline_replay as offline_replay
 
     def forbidden_replay(_path: Path) -> object:
         raise AssertionError("replay must not run")
@@ -1220,8 +1220,8 @@ def test_replay_bundle_routes_path_only_through_replay_runner(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import heliostune.tooling.methodology as methodology
-    import heliostune.tooling.offline_replay as offline_replay
+    import quartet.tooling.methodology as methodology
+    import quartet.tooling.offline_replay as offline_replay
 
     root, result = _fake_offline_replay_cli_result(tmp_path)
     calls: list[Path] = []
@@ -1246,8 +1246,8 @@ def test_replay_bundle_text_is_exact_and_discloses_replay_scope(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
-    from heliostune.tooling.verification import VERIFICATION_CONTROL_NAMES_V1
+    import quartet.tooling.offline_replay as offline_replay
+    from quartet.tooling.verification import VERIFICATION_CONTROL_NAMES_V1
 
     root, result = _fake_offline_replay_cli_result(tmp_path)
     monkeypatch.setattr(offline_replay, "replay_bundle_v1", lambda _path: result)
@@ -1283,8 +1283,8 @@ def test_replay_bundle_json_stdout_is_exact_canonical_bytes_and_bypasses_rich(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
-    from heliostune.tooling.verification import encode_verification_record_v1
+    import quartet.tooling.offline_replay as offline_replay
+    from quartet.tooling.verification import encode_verification_record_v1
 
     root, result = _fake_offline_replay_cli_result(tmp_path)
     expected = encode_verification_record_v1(result.record)
@@ -1305,8 +1305,8 @@ def test_replay_bundle_output_uses_exact_result_writer_and_is_silent(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
-    from heliostune.tooling.verification import encode_verification_record_v1
+    import quartet.tooling.offline_replay as offline_replay
+    from quartet.tooling.verification import encode_verification_record_v1
 
     root, result = _fake_offline_replay_cli_result(tmp_path)
     output = tmp_path / "offline-replay-record.json"
@@ -1332,7 +1332,7 @@ def test_replay_bundle_failed_control_suppresses_success_output_and_file(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
+    import quartet.tooling.offline_replay as offline_replay
 
     root, result = _fake_offline_replay_cli_result(tmp_path)
     output = tmp_path / "offline-replay-record.json"
@@ -1368,7 +1368,7 @@ def test_replay_bundle_drill_failures_emit_no_upgraded_output(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
+    import quartet.tooling.offline_replay as offline_replay
 
     root = tmp_path / "bundle.json"
     output = tmp_path / "offline-replay-record.json"
@@ -1391,8 +1391,8 @@ def test_replay_bundle_result_failure_emits_no_success_output(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
-    import heliostune.tooling.verification as verification
+    import quartet.tooling.offline_replay as offline_replay
+    import quartet.tooling.verification as verification
 
     root, result = _fake_offline_replay_cli_result(tmp_path)
     output = tmp_path / "offline-replay-record.json"
@@ -1420,7 +1420,7 @@ def test_replay_bundle_declared_lifecycle_and_provenance_cannot_bypass_drill(
     tmp_path: Path,
     capfdbinary: pytest.CaptureFixture[bytes],
 ) -> None:
-    import heliostune.tooling.offline_replay as offline_replay
+    import quartet.tooling.offline_replay as offline_replay
 
     root = tmp_path / "bundle.json"
     write_json_atomic(
@@ -1589,7 +1589,7 @@ def test_version_is_installed_metadata(capsys: pytest.CaptureFixture[str]) -> No
     with pytest.raises(SystemExit) as raised:
         cli.build_parser().parse_args(["--version"])
     assert raised.value.code == 0
-    assert capsys.readouterr().out.strip() == f"heliostune {version('heliostune')}"
+    assert capsys.readouterr().out.strip() == f"quartet {version('quartet')}"
 
 
 def _copy_scope_templates(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -1888,7 +1888,7 @@ def _fake_local_result(
     capability: str,
     suite_id: str = "gated_mlp_epilogue.v1",
 ) -> object:
-    from heliostune.local_executor import (
+    from quartet.local_executor import (
         RMSNORM_SUITE_SHA256,
         CapabilityProbe,
         LocalExecutionResult,
@@ -1955,8 +1955,8 @@ def test_run_local_suite_completed_writes_and_reports_bundle(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from heliostune import local_executor
-    from heliostune.tooling import local_bundle
+    from quartet import local_executor
+    from quartet.tooling import local_bundle
 
     suite = tmp_path / "suite.json"
     plugin = tmp_path / "plugin.json"
@@ -2014,9 +2014,9 @@ def test_run_local_suite_dispatches_native_digest_and_type_to_native_writer(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from heliostune import local_executor, native_fusion_executor
-    from heliostune.local_executor import CapabilityProbe
-    from heliostune.tooling import local_bundle, native_fusion_bundle
+    from quartet import local_executor, native_fusion_executor
+    from quartet.local_executor import CapabilityProbe
+    from quartet.tooling import local_bundle, native_fusion_bundle
 
     repository = Path(cli.__file__).resolve().parents[2]
     suite = repository / "benchmarks/suites/residual-rmsnorm-triton-v1.json"
@@ -2091,8 +2091,8 @@ def test_native_preflight_hazards_prevent_execution(
     monkeypatch: pytest.MonkeyPatch,
     hazard: str,
 ) -> None:
-    from heliostune import local_executor
-    from heliostune.tooling import native_fusion_bundle
+    from quartet import local_executor
+    from quartet.tooling import native_fusion_bundle
 
     repository = Path(cli.__file__).resolve().parents[2]
     suite = repository / "benchmarks/suites/residual-rmsnorm-triton-v1.json"
@@ -2145,9 +2145,9 @@ def test_native_source_race_after_execution_is_rejected(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from heliostune import local_executor, native_fusion_executor
-    from heliostune.local_executor import CapabilityProbe
-    from heliostune.tooling import native_fusion_bundle
+    from quartet import local_executor, native_fusion_executor
+    from quartet.local_executor import CapabilityProbe
+    from quartet.tooling import native_fusion_bundle
 
     repository = Path(cli.__file__).resolve().parents[2]
     suite = repository / "benchmarks/suites/residual-rmsnorm-triton-v1.json"
@@ -2223,8 +2223,8 @@ def test_run_local_suite_noncompleted_still_writes_bundle_and_exits_nonzero(
     successes: int,
     failures: int,
 ) -> None:
-    from heliostune import local_executor
-    from heliostune.tooling import local_bundle
+    from quartet import local_executor
+    from quartet.tooling import local_bundle
 
     output = tmp_path / outcome
     result = _fake_local_result(outcome=outcome, capability=capability)
@@ -2275,7 +2275,7 @@ def test_run_local_suite_rejects_protected_repository_output_before_execution(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from heliostune import local_executor
+    from quartet import local_executor
 
     def unexpected_run(_path: Path) -> object:
         raise AssertionError("executor ran before output protection")
@@ -2284,7 +2284,7 @@ def test_run_local_suite_rejects_protected_repository_output_before_execution(
     repository = Path(cli.__file__).resolve().parents[2]
     suite = tmp_path / "external-suite-copy.json"
     output = repository / protected_name / "local-suite-test-output"
-    monkeypatch.setattr(cli, "__file__", "/wheel/site-packages/heliostune/cli.py")
+    monkeypatch.setattr(cli, "__file__", "/wheel/site-packages/quartet/cli.py")
 
     assert (
         cli.main(
@@ -2309,7 +2309,7 @@ def test_run_local_suite_rejects_existing_nonempty_destination(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from heliostune import local_executor
+    from quartet import local_executor
 
     output = tmp_path / "existing"
     output.mkdir()
@@ -2341,8 +2341,8 @@ def test_run_local_suite_accepts_existing_empty_destination(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from heliostune import local_executor
-    from heliostune.tooling import local_bundle
+    from quartet import local_executor
+    from quartet.tooling import local_bundle
 
     output = tmp_path / "empty"
     output.mkdir()
@@ -2390,15 +2390,15 @@ def test_run_local_suite_uses_digest_family_default_plugin_only_for_committed_te
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from heliostune import local_executor
-    from heliostune.tooling import local_bundle
+    from quartet import local_executor
+    from quartet.tooling import local_bundle
 
     repository = Path(cli.__file__).resolve().parents[2]
     suite = repository / "benchmarks/suites" / suite_name
     expected_plugin = repository / "benchmarks/plugins" / plugin_name
     result = _fake_local_result(outcome="completed", capability="available")
     monkeypatch.setattr(local_executor, "execute_local_suite", lambda _path: result)
-    monkeypatch.setattr(cli, "__file__", "/wheel/site-packages/heliostune/cli.py")
+    monkeypatch.setattr(cli, "__file__", "/wheel/site-packages/quartet/cli.py")
 
     def write_bundle(
         _observed: object,
@@ -2442,8 +2442,8 @@ def test_run_local_suite_escapes_unusual_identifiers_and_bundle_root(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from heliostune import local_executor
-    from heliostune.tooling import local_bundle
+    from quartet import local_executor
+    from quartet.tooling import local_bundle
 
     output = tmp_path / "output"
     unusual_id = "[bold]suite[/bold]\nsecond"

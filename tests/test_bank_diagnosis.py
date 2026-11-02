@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-from heliostune.configs import Workload
-from heliostune.tooling.bank_diagnosis import (
+from quartet.configs import Workload
+from quartet.tooling.bank_diagnosis import (
     PAIR_METRICS,
     Cell,
     aggregate,

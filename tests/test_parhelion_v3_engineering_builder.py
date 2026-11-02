@@ -96,19 +96,19 @@ def test_manifest_binds_complete_scientific_source_and_lock_closure() -> None:
     inventory_paths = [entry["path"] for entry in inventory]
     expected_paths = sorted(
         path.relative_to(builder._REPO).as_posix()
-        for path in (builder._REPO / "src/heliostune").rglob("*.py")
+        for path in (builder._REPO / "src/quartet").rglob("*.py")
     )
 
     assert inventory_paths == expected_paths
     assert {
-        "src/heliostune/tooling/artifacts.py",
-        "src/heliostune/bandit.py",
-        "src/heliostune/tooling/protocol.py",
-        "src/heliostune/replay.py",
-        "src/heliostune/retrieval.py",
-        "src/heliostune/uncertainty.py",
-        "src/heliostune/v3_engine.py",
-        "src/heliostune/validation.py",
+        "src/quartet/tooling/artifacts.py",
+        "src/quartet/bandit.py",
+        "src/quartet/tooling/protocol.py",
+        "src/quartet/replay.py",
+        "src/quartet/retrieval.py",
+        "src/quartet/uncertainty.py",
+        "src/quartet/v3_engine.py",
+        "src/quartet/validation.py",
     } <= set(inventory_paths)
     assert [entry["path"] for entry in implementation["dependency_contract"]] == [
         "pyproject.toml",

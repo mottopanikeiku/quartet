@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NoReturn, cast
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_CONFIGS,
     DEFAULT_WORKLOADS,
     HOPPER_GEMM_CONFIGS,
@@ -24,10 +24,10 @@ from heliostune.configs import (
     SkinnyGemvConfig,
     Workload,
 )
-from heliostune.hardware import expectation_for_gpu, validate_hardware
-from heliostune.schema import HardwareProfile, Measurement
-from heliostune.tooling.artifacts import read_json, read_measurements, strict_json_dumps
-from heliostune.validation import (
+from quartet.hardware import expectation_for_gpu, validate_hardware
+from quartet.schema import HardwareProfile, Measurement
+from quartet.tooling.artifacts import read_json, read_measurements, strict_json_dumps
+from quartet.validation import (
     exact_bool,
     exact_fields,
     exact_int,

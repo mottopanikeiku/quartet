@@ -11,7 +11,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from heliostune.action_collection import (
+from quartet.action_collection import (
     RunSpec,
     checkpoint_path,
     default_output,
@@ -20,10 +20,10 @@ from heliostune.action_collection import (
     package_source_sha256,
     plan_manifest,
 )
-from heliostune.tooling.artifacts import strict_json_dumps, write_bytes_atomic_noreplace
+from quartet.tooling.artifacts import strict_json_dumps, write_bytes_atomic_noreplace
 
 _REPO = Path(__file__).resolve().parents[1]
-_DEFAULT_CHECKPOINTS = Path.home() / ".cache/heliostune/action-runs"
+_DEFAULT_CHECKPOINTS = Path.home() / ".cache/quartet/action-runs"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None, *, repository: Path = _REPO) -> int:
         source_commit=commit,
         plan_commit=plan_commit,
         collector_sha256=file_sha256(Path(__file__)),
-        source_sha256=package_source_sha256(repository / "src/heliostune"),
+        source_sha256=package_source_sha256(repository / "src/quartet"),
         allow_unlisted_gpu=args.allow_unlisted_gpu,
     )
     checkpoint = checkpoint_path(args.checkpoint_root, spec)
@@ -93,7 +93,7 @@ def main(argv: list[str] | None = None, *, repository: Path = _REPO) -> int:
 
     if not torch.cuda.is_available():
         raise SystemExit("no CUDA device is available; use --dry-run to check the plan on CPU")
-    from heliostune.action_expansion import collect_on_device
+    from quartet.action_expansion import collect_on_device
 
     result = collect_on_device(spec, checkpoint)
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -8,17 +8,17 @@ from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 
-from heliostune.schema import Measurement
-from heliostune.tooling.artifacts import (
+from quartet.schema import Measurement
+from quartet.tooling.artifacts import (
     read_json,
     read_measurements,
     write_bytes_atomic,
     write_json_atomic,
     write_measurements_atomic,
 )
-from heliostune.tooling.protocol import load_v3_protocol, require_v3_runtime
-from heliostune.tooling.v3_artifacts import sha256_file
-from heliostune.validation import exact_object
+from quartet.tooling.protocol import load_v3_protocol, require_v3_runtime
+from quartet.tooling.v3_artifacts import sha256_file
+from quartet.validation import exact_object
 
 _REPO = Path(__file__).resolve().parents[1]
 _PROTOCOL = _REPO / "benchmarks/parhelion-v3-development-protocol.json"

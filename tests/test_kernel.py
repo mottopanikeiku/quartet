@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, KernelConfig
-from heliostune.errors import HeliostuneError
+from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, KernelConfig
+from quartet.errors import QuartetError
 
 torch = pytest.importorskip("torch")
 pytest.importorskip("triton")
-kernel = pytest.importorskip("heliostune.kernel")
+kernel = pytest.importorskip("quartet.kernel")
 _within_tolerance = kernel._within_tolerance
 benchmark_measurements = kernel.benchmark_measurements
 
@@ -41,7 +41,7 @@ def test_bad_benchmark_manifest_is_rejected_before_cuda(
     arguments: dict[str, object],
 ) -> None:
     _cuda_must_not_run(monkeypatch)
-    with pytest.raises(HeliostuneError):
+    with pytest.raises(QuartetError):
         benchmark_measurements(**arguments)
 
 
@@ -60,7 +60,7 @@ def test_forged_non_power_of_two_config_is_rejected_before_cuda(
     }.items():
         object.__setattr__(config, name, value)
 
-    with pytest.raises(HeliostuneError, match="invalid block_m"):
+    with pytest.raises(QuartetError, match="invalid block_m"):
         benchmark_measurements(configs=(config,))
 
 

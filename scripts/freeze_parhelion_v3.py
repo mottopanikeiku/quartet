@@ -7,13 +7,13 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
-from heliostune.tooling.artifacts import read_json, write_json_atomic, write_text_atomic
-from heliostune.tooling.protocol import (
+from quartet.tooling.artifacts import read_json, write_json_atomic, write_text_atomic
+from quartet.tooling.protocol import (
     load_v3_protocol,
     require_v3_runtime,
     runtime_manifest,
 )
-from heliostune.tooling.v3_artifacts import sha256_file
+from quartet.tooling.v3_artifacts import sha256_file
 
 _REPO = Path(__file__).resolve().parents[1]
 _PROTOCOL = _REPO / "benchmarks/parhelion-v3-development-protocol.json"
@@ -28,16 +28,16 @@ _IMPLEMENTATION_PATHS = (
     "scripts/canonicalize_parhelion_v3_a100.py",
     "scripts/freeze_parhelion_v3.py",
     "scripts/prune_parhelion_v3_configs.py",
-    "src/heliostune/bandit.py",
-    "src/heliostune/collection.py",
-    "src/heliostune/configs.py",
-    "src/heliostune/features.py",
-    "src/heliostune/kernel.py",
-    "src/heliostune/tooling/protocol.py",
-    "src/heliostune/retrieval.py",
-    "src/heliostune/schema.py",
-    "src/heliostune/tooling/v3_artifacts.py",
-    "src/heliostune/v3_engine.py",
+    "src/quartet/bandit.py",
+    "src/quartet/collection.py",
+    "src/quartet/configs.py",
+    "src/quartet/features.py",
+    "src/quartet/kernel.py",
+    "src/quartet/tooling/protocol.py",
+    "src/quartet/retrieval.py",
+    "src/quartet/schema.py",
+    "src/quartet/tooling/v3_artifacts.py",
+    "src/quartet/v3_engine.py",
 )
 
 

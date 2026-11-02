@@ -16,17 +16,17 @@ from types import SimpleNamespace
 import pytest
 import zstandard
 
-import heliostune.local_executor as local
-import heliostune.tooling.remote_execution as remote
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.fusion_execution_registry import (
+import quartet.local_executor as local
+import quartet.tooling.remote_execution as remote
+from quartet.errors import ArtifactError, SchemaError
+from quartet.fusion_execution_registry import (
     FUSION_EXECUTION_REGISTRY,
     fusion_execution_spec,
 )
-from heliostune.local_executor import CapabilityProbe, LocalExecutionResult, TensorMaterialization
-from heliostune.native_fusion_executor import NativeFusionExecutionResult
-from heliostune.schema import HardwareProfile
-from heliostune.tooling.remote_execution import (
+from quartet.local_executor import CapabilityProbe, LocalExecutionResult, TensorMaterialization
+from quartet.native_fusion_executor import NativeFusionExecutionResult
+from quartet.schema import HardwareProfile
+from quartet.tooling.remote_execution import (
     RECEIPT_LIMITATIONS,
     RECEIPT_SCHEMA,
     REMOTE_RESULT_ENVELOPE_MAX_BYTES,
@@ -50,8 +50,8 @@ from heliostune.tooling.remote_execution import (
     verify_remote_receipt_payloads,
     write_remote_receipt,
 )
-from heliostune.tooling.scope import verify_suite
-from heliostune.tooling.wheel_verifier import source_digest, source_entries
+from quartet.tooling.scope import verify_suite
+from quartet.tooling.wheel_verifier import source_digest, source_entries
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE = ROOT / "benchmarks/suites/gated-mlp-epilogue-v1.json"
@@ -71,7 +71,7 @@ def _intent(tmp_path: Path) -> tuple[RemoteIntent, bytes, bytes, bytes]:
             suite_sha256=suite.sha256,
             plugin_path=str(PLUGIN),
             plugin_sha256=sha256_bytes(plugin),
-            wheel_filename="heliostune-1.0.0-py3-none-any.whl",
+            wheel_filename="quartet-1.0.0-py3-none-any.whl",
             wheel_sha256="2" * 64,
             manifest_sha256=sha256_bytes(manifest),
             head_commit="4" * 40,
@@ -94,11 +94,11 @@ def _native_intent(tmp_path: Path) -> tuple[RemoteIntent, bytes, bytes, bytes]:
             suite_sha256=suite.sha256,
             plugin_path=str(NATIVE_PLUGIN),
             plugin_sha256=sha256_bytes(plugin),
-            wheel_filename="heliostune-1.0.0-py3-none-any.whl",
+            wheel_filename="quartet-1.0.0-py3-none-any.whl",
             wheel_sha256="2" * 64,
             manifest_sha256=sha256_bytes(manifest),
             head_commit="4" * 40,
-            source_sha256=source_digest(source_entries(ROOT / "src/heliostune")),
+            source_sha256=source_digest(source_entries(ROOT / "src/quartet")),
         ),
         suite.bytes,
         plugin,
@@ -587,7 +587,7 @@ def _native_completed_envelope(tmp_path: Path) -> RemoteResultEnvelope:
         "backend_invoked": True,
         "fusion_claim": False,
     }
-    package_dir = ROOT / "src/heliostune"
+    package_dir = ROOT / "src/quartet"
     package_sources = source_entries(package_dir)
     source_names = (
         "fusion_kernels.py",
@@ -1272,7 +1272,7 @@ def test_legacy_transport_wrapper_bytes_are_unchanged(tmp_path: Path) -> None:
 
 def test_transport_freezes_exact_utf8_boundary_and_bounded_error(tmp_path: Path) -> None:
     intent, suite_bytes, _, _ = _intent(tmp_path)
-    intent = replace(intent, output_path="/tmp/heliostune-transport-boundary")
+    intent = replace(intent, output_path="/tmp/quartet-transport-boundary")
     _, _, request_digest = decode_remote_request(encode_remote_request(intent, suite_bytes))
     base = _envelope(intent, _aborted_result(intent, suite_bytes), request_digest)
     entropy = "".join(hashlib.sha256(str(index).encode()).hexdigest() for index in range(1000))
@@ -1760,7 +1760,7 @@ def test_live_writer_retains_authorized_journal_if_same_inode_mutates_after_boun
 
     def mkdir_after_boundary(path: str, mode: int = 0o777, *, dir_fd: int | None = None) -> None:
         nonlocal mutated
-        if not mutated and path.startswith(".heliostune-remote-receipt-"):
+        if not mutated and path.startswith(".quartet-remote-receipt-"):
             descriptor = os.open(journal_path, os.O_WRONLY)
             try:
                 assert os.pwrite(descriptor, forged, 0) == len(forged)
@@ -1770,7 +1770,7 @@ def test_live_writer_retains_authorized_journal_if_same_inode_mutates_after_boun
             mutated = True
         original_mkdir(path, mode, dir_fd=dir_fd)
 
-    monkeypatch.setattr("heliostune.tooling.remote_execution.os.mkdir", mkdir_after_boundary)
+    monkeypatch.setattr("quartet.tooling.remote_execution.os.mkdir", mkdir_after_boundary)
     try:
         write_remote_receipt(
             records,
@@ -2019,9 +2019,9 @@ def test_frozen_execution_registry_selects_legacy_and_native_modal_apis() -> Non
 def test_four_distinct_native_compiler_errors_fit_and_round_trip_transport(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import heliostune.fusion_kernels as fusion
-    import heliostune.local_executor as legacy
-    import heliostune.native_fusion_executor as native
+    import quartet.fusion_kernels as fusion
+    import quartet.local_executor as legacy
+    import quartet.native_fusion_executor as native
 
     intent, suite_bytes, _, _ = _native_intent(tmp_path)
     capability = CapabilityProbe(
@@ -2151,7 +2151,7 @@ def test_four_distinct_native_compiler_errors_fit_and_round_trip_transport(
 def test_native_aborted_result_and_receipt_round_trip(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import heliostune.native_fusion_executor as native
+    import quartet.native_fusion_executor as native
 
     intent, suite_bytes, plugin_bytes, manifest_bytes = _native_intent(tmp_path)
     capability = CapabilityProbe(
@@ -2281,8 +2281,8 @@ def test_remote_execution_import_does_not_load_gpu_modules() -> None:
             sys.executable,
             "-c",
             (
-                "import sys; import heliostune.tooling.remote_execution; "
-                "assert 'heliostune.native_fusion_executor' not in sys.modules; "
+                "import sys; import quartet.tooling.remote_execution; "
+                "assert 'quartet.native_fusion_executor' not in sys.modules; "
                 "assert 'torch' not in sys.modules; assert 'triton' not in sys.modules"
             ),
         ],

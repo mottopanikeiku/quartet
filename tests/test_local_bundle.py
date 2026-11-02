@@ -11,9 +11,9 @@ from typing import Any, Literal
 
 import pytest
 
-import heliostune.tooling.local_bundle as local_bundle
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.local_executor import (
+import quartet.tooling.local_bundle as local_bundle
+from quartet.errors import ArtifactError, SchemaError
+from quartet.local_executor import (
     CapabilityProbe,
     CellObservation,
     CorrectnessObservation,
@@ -21,9 +21,9 @@ from heliostune.local_executor import (
     TensorMaterialization,
     TimingObservation,
 )
-from heliostune.tooling.artifacts import strict_json_dumps, strict_json_loads, write_bytes_atomic
-from heliostune.tooling.methodology import VerifiedBundle, verify_bundle_v1
-from heliostune.tooling.scope import verify_plugin, verify_suite
+from quartet.tooling.artifacts import strict_json_dumps, strict_json_loads, write_bytes_atomic
+from quartet.tooling.methodology import VerifiedBundle, verify_bundle_v1
+from quartet.tooling.scope import verify_plugin, verify_suite
 
 _ROOT = Path(__file__).resolve().parents[1]
 _PLUGIN = _ROOT / "benchmarks/plugins/fusion-reference-plugin-v1.json"
@@ -896,7 +896,7 @@ def test_bundle_root_is_staged_last_and_root_failure_leaves_no_destination(
         "protocol.json",
         "attempts.jsonl",
     }
-    assert not any(path.name.startswith(".heliostune-bundle-") for path in tmp_path.iterdir())
+    assert not any(path.name.startswith(".quartet-bundle-") for path in tmp_path.iterdir())
 
 
 @pytest.mark.skipif(not _DESCRIPTOR_PUBLICATION, reason=_DESCRIPTOR_REASON)
@@ -926,7 +926,7 @@ def test_opt_in_custody_artifact_damage_prevents_publication_and_cleans_staging(
         local_bundle.write_local_bundle(_result(), plugin_path=_PLUGIN, output_dir=output)
 
     assert not output.exists()
-    assert not any(path.name.startswith(".heliostune-bundle-") for path in tmp_path.iterdir())
+    assert not any(path.name.startswith(".quartet-bundle-") for path in tmp_path.iterdir())
 
 
 @pytest.mark.skipif(not _DESCRIPTOR_PUBLICATION, reason=_DESCRIPTOR_REASON)
@@ -967,7 +967,7 @@ def test_unchecked_required_control_prevents_atomic_publication(
         local_bundle.write_local_bundle(_result(), plugin_path=_PLUGIN, output_dir=output)
 
     assert not output.exists()
-    assert not any(path.name.startswith(".heliostune-bundle-") for path in tmp_path.iterdir())
+    assert not any(path.name.startswith(".quartet-bundle-") for path in tmp_path.iterdir())
 
 
 @pytest.mark.skipif(not _DESCRIPTOR_PUBLICATION, reason=_DESCRIPTOR_REASON)
@@ -1006,7 +1006,7 @@ def test_staged_verification_failure_leaves_no_final_destination(
 
     assert saw_pinned_directory
     assert not output.exists()
-    assert not any(path.name.startswith(".heliostune-bundle-") for path in tmp_path.iterdir())
+    assert not any(path.name.startswith(".quartet-bundle-") for path in tmp_path.iterdir())
 
 
 @pytest.mark.skipif(not _DESCRIPTOR_PUBLICATION, reason=_DESCRIPTOR_REASON)
@@ -1033,7 +1033,7 @@ def test_staging_path_swap_cannot_redirect_pinned_verification(
                 diagnostic_directory=diagnostic_directory,
             )
         staging = next(
-            path for path in tmp_path.iterdir() if path.name.startswith(".heliostune-bundle-")
+            path for path in tmp_path.iterdir() if path.name.startswith(".quartet-bundle-")
         )
         staging.rename(swapped)
         staging.mkdir()
@@ -1079,7 +1079,7 @@ def test_post_rename_tampering_is_reverified_and_removed(
         local_bundle.write_local_bundle(_result(), plugin_path=_PLUGIN, output_dir=output)
 
     assert not output.exists()
-    assert not any(path.name.startswith(".heliostune-bundle-") for path in tmp_path.iterdir())
+    assert not any(path.name.startswith(".quartet-bundle-") for path in tmp_path.iterdir())
 
 
 @pytest.mark.skipif(not _DESCRIPTOR_PUBLICATION, reason=_DESCRIPTOR_REASON)
@@ -1110,7 +1110,7 @@ def test_parent_rename_and_symlink_substitution_cannot_redirect_publication(
     assert substituted
     assert not output.exists()
     assert not (moved_parent / "bundle").exists()
-    assert not any(path.name.startswith(".heliostune-bundle-") for path in moved_parent.iterdir())
+    assert not any(path.name.startswith(".quartet-bundle-") for path in moved_parent.iterdir())
 
 
 @pytest.mark.skipif(not _DESCRIPTOR_PUBLICATION, reason=_DESCRIPTOR_REASON)

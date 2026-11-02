@@ -44,7 +44,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
 
-          release_version="$(uv run python -c 'import importlib.metadata as m; print(m.version("heliostune"))')"
+          release_version="$(uv run python -c 'import importlib.metadata as m; print(m.version("quartet"))')"
           if [[ ! "${release_version}" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "Project version is not semantic: ${release_version}" >&2
             exit 1
@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          release_dir="${RUNNER_TEMP}/heliostune-release"
+          release_dir="${RUNNER_TEMP}/quartet-release"
           rm -rf "${release_dir}"
           mkdir -p "${release_dir}/dist"
           cd "${release_dir}"
@@ -81,23 +81,23 @@ jobs:
           sdists=(dist/*.tar.gz)
           test "${#wheels[@]}" -eq 1
           test "${#sdists[@]}" -eq 1
-          test "$(basename "${wheels[0]}")" = "heliostune-${RELEASE_VERSION}-py3-none-any.whl"
-          test "$(basename "${sdists[0]}")" = "heliostune-${RELEASE_VERSION}.tar.gz"
+          test "$(basename "${wheels[0]}")" = "quartet-${RELEASE_VERSION}-py3-none-any.whl"
+          test "$(basename "${sdists[0]}")" = "quartet-${RELEASE_VERSION}.tar.gz"
       - name: Isolated smoke test every distribution
         env:
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
-          release_dir="${RUNNER_TEMP}/heliostune-release"
+          release_dir="${RUNNER_TEMP}/quartet-release"
           artifacts=("${release_dir}"/dist/*.whl "${release_dir}"/dist/*.tar.gz)
           for index in "${!artifacts[@]}"; do
             venv="${release_dir}/smoke-${index}"
             uv venv --clear "${venv}" --python 3.11
             uv pip install --python "${venv}/bin/python" "${artifacts[index]}"
             RELEASE_VERSION="${RELEASE_VERSION}" "${venv}/bin/python" -c \
-              "import heliostune, importlib.metadata as m, os; version = m.version('heliostune'); assert version == os.environ['RELEASE_VERSION']; assert heliostune.__version__ == version"
-            "${venv}/bin/heliostune" --help
+              "import quartet, importlib.metadata as m, os; version = m.version('quartet'); assert version == os.environ['RELEASE_VERSION']; assert quartet.__version__ == version"
+            "${venv}/bin/quartet" --help
           done
       - name: Converge annotated release tag
         env:
@@ -156,8 +156,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          release_dir="${RUNNER_TEMP}/heliostune-release"
-          bundle="${release_dir}/dist/heliostune-${RELEASE_VERSION}.git.bundle"
+          release_dir="${RUNNER_TEMP}/quartet-release"
+          bundle="${release_dir}/dist/quartet-${RELEASE_VERSION}.git.bundle"
 
           mapfile -t semantic_tags < <(
             git for-each-ref --format='%(refname)' refs/tags |
@@ -171,7 +171,7 @@ jobs:
           git bundle create "${bundle}" "${semantic_tags[@]}"
           git bundle verify "${bundle}"
 
-          bundle_heads="${RUNNER_TEMP}/heliostune-release/bundle-heads"
+          bundle_heads="${RUNNER_TEMP}/quartet-release/bundle-heads"
           git bundle list-heads "${bundle}" > "${bundle_heads}"
           for ref in "${semantic_tags[@]}"; do
             tag_object="$(git rev-parse "${ref}")"
@@ -185,7 +185,7 @@ jobs:
       - name: Attest every release asset
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-checksums: "${{ runner.temp }}/heliostune-release/attestation-subjects.sha256"
+          subject-checksums: "${{ runner.temp }}/quartet-release/attestation-subjects.sha256"
       - name: Converge and publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -193,14 +193,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          release_dir="${RUNNER_TEMP}/heliostune-release"
+          release_dir="${RUNNER_TEMP}/quartet-release"
           release_pages="${release_dir}/release-pages.json"
           matching_releases="${release_dir}/matching-releases.json"
           local_assets="${release_dir}/local-assets.tsv"
           remote_assets="${release_dir}/remote-assets.tsv"
           release_json="${release_dir}/release.json"
-          release_title="HeliosTune ${RELEASE_TAG}"
-          release_notes="Maintained HeliosTune release of protected-main snapshot ${GITHUB_SHA}, as tested by the release workflow. Verify all assets with SHA256SUMS. The Git bundle contains every semantic release tag and the complete history reachable from those tags; it does not contain a mutable main-branch ref."
+          release_title="quartet ${RELEASE_TAG}"
+          release_notes="Maintained quartet release of protected-main snapshot ${GITHUB_SHA}, as tested by the release workflow. Verify all assets with SHA256SUMS. The Git bundle contains every semantic release tag and the complete history reachable from those tags; it does not contain a mutable main-branch ref."
 
           find_matching_release() {
             gh api --paginate --slurp \

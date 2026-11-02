@@ -5,8 +5,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from heliostune.configs import KernelConfig, Workload
-from heliostune.retrieval import (
+from quartet.configs import KernelConfig, Workload
+from quartet.retrieval import (
     RETRIEVAL_FEATURE_NAMES,
     ArchiveObservation,
     RetrievalIndex,

@@ -18,10 +18,10 @@ from urllib.parse import urlparse
 
 import zstandard
 
-from heliostune.hardware import expectation_for_gpu, validate_hardware
-from heliostune.local_executor import LocalExecutionResult
-from heliostune.tooling.artifacts import read_git_blob, strict_json_loads, write_bytes_atomic
-from heliostune.tooling.remote_execution import (
+from quartet.hardware import expectation_for_gpu, validate_hardware
+from quartet.local_executor import LocalExecutionResult
+from quartet.tooling.artifacts import read_git_blob, strict_json_loads, write_bytes_atomic
+from quartet.tooling.remote_execution import (
     RemoteIntent,
     RemoteJournalRecord,
     RemoteResultEnvelope,
@@ -34,7 +34,7 @@ from heliostune.tooling.remote_execution import (
     verify_remote_receipt,
     verify_remote_receipt_payloads,
 )
-from heliostune.validation import (
+from quartet.validation import (
     exact_fields,
     exact_int,
     exact_object,

@@ -4,11 +4,11 @@ from dataclasses import replace
 
 import pytest
 
-from heliostune.bandit import BayesianLinearBandit
-from heliostune.configs import KernelConfig, Workload
-from heliostune.replay import BenchmarkTable, compare_methods, eligible_source_workloads
-from heliostune.schema import HardwareProfile, Measurement
-from heliostune.synthetic import synthetic_measurements
+from quartet.bandit import BayesianLinearBandit
+from quartet.configs import KernelConfig, Workload
+from quartet.replay import BenchmarkTable, compare_methods, eligible_source_workloads
+from quartet.schema import HardwareProfile, Measurement
+from quartet.synthetic import synthetic_measurements
 
 _HARDWARE = (
     HardwareProfile("source", "Source GPU", (8, 9), 60, 24.0),

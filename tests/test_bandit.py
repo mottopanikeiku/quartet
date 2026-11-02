@@ -3,7 +3,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from heliostune.bandit import BayesianLinearBandit
+from quartet.bandit import BayesianLinearBandit
 
 
 def test_power_prior_transfer_preserves_only_discounted_likelihood() -> None:

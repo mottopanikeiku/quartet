@@ -6,9 +6,9 @@ from typing import Any
 
 import pytest
 
-from heliostune.action_configs import SplitKConfig, candidates_for
-from heliostune.configs import DEFAULT_WORKLOADS, HopperGemmConfig, KernelConfig, Workload
-from heliostune.tooling.kernel_dossier import build_dossier, predict
+from quartet.action_configs import SplitKConfig, candidates_for
+from quartet.configs import DEFAULT_WORKLOADS, HopperGemmConfig, KernelConfig, Workload
+from quartet.tooling.kernel_dossier import build_dossier, predict
 
 _REPO = Path(__file__).resolve().parents[1]
 _SUMMARY: dict[str, Any] = json.loads(
@@ -109,4 +109,5 @@ def test_dossier_attributes_tutorial_and_repository_code() -> None:
     assert "v3.4.0" in provenance["persistent"]["origin"]
     assert "not a new algorithm" in provenance["split_k"]["origin"]
     for entry in provenance.values():
-        assert (_REPO / entry["source"]).is_file()
+        # The saved diagnosis keeps the pre-rename path, so look the file up under its new name.
+        assert (_REPO / entry["source"].replace("src/heliostune/", "src/quartet/")).is_file()

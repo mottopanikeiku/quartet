@@ -31,16 +31,16 @@ from analyze_precision_probe import (
     load_summaries,
 )
 
-from heliostune.collection import AttemptJournal, sha256_file
-from heliostune.schema import HardwareProfile
-from heliostune.tooling.artifacts import (
+from quartet.collection import AttemptJournal, sha256_file
+from quartet.schema import HardwareProfile
+from quartet.tooling.artifacts import (
     read_git_blob,
     read_json,
     strict_json_dumps,
     strict_json_loads,
     write_bytes_atomic,
 )
-from heliostune.validation import (
+from quartet.validation import (
     exact_bool,
     exact_fields,
     exact_int,
@@ -1478,7 +1478,7 @@ def _analyze_precision(
     )
     if exact_int(artifact.get("schema_version"), context="precision raw schema version") != 2:
         _fail("precision raw schema must be h100-precision-probe-raw-v2 (schema_version 2)")
-    with TemporaryDirectory(prefix="heliostune-precision-check-") as directory:
+    with TemporaryDirectory(prefix="quartet-precision-check-") as directory:
         path = Path(directory) / "h100-precision-probe.json"
         path.write_bytes(raw)
         loaded, summaries = load_summaries(path)

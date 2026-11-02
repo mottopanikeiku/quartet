@@ -7,12 +7,12 @@ from typing import Any, cast
 
 import pytest
 
-import heliostune.native_fusion_analysis as analysis
-from heliostune.errors import SchemaError
-from heliostune.local_executor import CapabilityProbe
-from heliostune.native_fusion_analysis import analyze_native_fusion_result
-from heliostune.native_fusion_executor import NativeFusionExecutionResult, run_native_fusion_suite
-from heliostune.tooling.scope import verify_suite
+import quartet.native_fusion_analysis as analysis
+from quartet.errors import SchemaError
+from quartet.local_executor import CapabilityProbe
+from quartet.native_fusion_analysis import analyze_native_fusion_result
+from quartet.native_fusion_executor import NativeFusionExecutionResult, run_native_fusion_suite
+from quartet.tooling.scope import verify_suite
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SUITE_PATH = _ROOT / "benchmarks/suites/residual-rmsnorm-triton-v1.json"
@@ -339,7 +339,7 @@ def _unavailable() -> CapabilityProbe:
 def test_result_is_strictly_reparsed_and_tamper_is_rejected(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import heliostune.native_fusion_executor as executor
+    import quartet.native_fusion_executor as executor
 
     monkeypatch.setattr(executor, "_probe_capability", lambda: (_unavailable(), None, None))
     result = run_native_fusion_suite(_SUITE_PATH)

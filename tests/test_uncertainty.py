@@ -5,8 +5,8 @@ import math
 import numpy as np
 import pytest
 
-from heliostune.errors import ProtocolError
-from heliostune.uncertainty import (
+from quartet.errors import ProtocolError
+from quartet.uncertainty import (
     _exact_student_t_critical_95,
     deterministic_fold_summary,
     paired_contrast,

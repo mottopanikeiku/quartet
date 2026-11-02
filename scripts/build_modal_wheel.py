@@ -12,11 +12,11 @@ import zipfile
 from email.parser import BytesParser
 from pathlib import Path
 
-from heliostune.tooling.artifacts import strict_json_dumps, write_bytes_atomic
+from quartet.tooling.artifacts import strict_json_dumps, write_bytes_atomic
 
 _REPO = Path(__file__).resolve().parents[1]
 _OUTPUT = _REPO / "artifacts/modal-wheel"
-_PACKAGE = _REPO / "src/heliostune"
+_PACKAGE = _REPO / "src/quartet"
 _MANIFEST_SCHEMA_VERSION = 1
 _PYTHON_VERSION = "3.11"
 _UV_VERSION = "0.12.5"
@@ -70,7 +70,7 @@ def _source_entries() -> dict[str, bytes]:
     entries: dict[str, bytes] = {}
     for path in sorted(_PACKAGE.rglob("*")):
         if path.is_file() and "__pycache__" not in path.parts:
-            entries[f"heliostune/{path.relative_to(_PACKAGE).as_posix()}"] = path.read_bytes()
+            entries[f"quartet/{path.relative_to(_PACKAGE).as_posix()}"] = path.read_bytes()
     return entries
 
 
@@ -98,15 +98,15 @@ def _verify_wheel(wheel: Path, expected_version: str) -> str:
         if len(metadata_names) != 1:
             raise RuntimeError("wheel must contain exactly one METADATA file")
         metadata = BytesParser().parsebytes(archive.read(metadata_names[0]))
-        if metadata["Name"] != "heliostune" or metadata["Version"] != expected_version:
+        if metadata["Name"] != "quartet" or metadata["Version"] != expected_version:
             raise RuntimeError(
                 f"wheel metadata is {metadata['Name']} {metadata['Version']}, "
-                f"expected heliostune {expected_version}"
+                f"expected quartet {expected_version}"
             )
         packaged_sources = {
             name: archive.read(name)
             for name in names
-            if name.startswith("heliostune/") and not name.endswith("/")
+            if name.startswith("quartet/") and not name.endswith("/")
         }
     if packaged_sources != expected_sources:
         missing = sorted(set(expected_sources) - set(packaged_sources))
@@ -148,7 +148,7 @@ def main() -> int:
 
     shutil.rmtree(_OUTPUT, ignore_errors=True)
     _OUTPUT.mkdir(parents=True)
-    with tempfile.TemporaryDirectory(prefix="heliostune-wheel-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="quartet-wheel-") as temporary:
         root = Path(temporary)
         build_constraint = root / "build-constraints.txt"
         build_constraint.write_text("\n".join(_BUILD_DEPENDENCIES) + "\n", encoding="utf-8")
@@ -170,7 +170,7 @@ def main() -> int:
         first_payload = first.read_bytes()
         if first_payload != second.read_bytes():
             raise RuntimeError("the two clean wheel builds are not byte-identical")
-        expected_name = f"heliostune-{expected_version}-py3-none-any.whl"
+        expected_name = f"quartet-{expected_version}-py3-none-any.whl"
         if first.name != expected_name:
             raise RuntimeError(f"wheel is named {first.name!r}, expected {expected_name!r}")
         source_sha256 = _verify_wheel(first, expected_version)

@@ -19,9 +19,9 @@ from typing import Any
 
 import pytest
 
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.fusion_execution_registry import fusion_execution_spec
-from heliostune.tooling.remote_execution import (
+from quartet.errors import ArtifactError, SchemaError
+from quartet.fusion_execution_registry import fusion_execution_spec
+from quartet.tooling.remote_execution import (
     CLIENT_TIMEOUT_SECONDS,
     JournalState,
     RemoteJournal,
@@ -31,8 +31,8 @@ from heliostune.tooling.remote_execution import (
     remote_artifact_paths,
     sha256_bytes,
 )
-from heliostune.tooling.scope import verify_plugin, verify_suite
-from heliostune.tooling.wheel_verifier import source_digest, source_entries
+from quartet.tooling.scope import verify_plugin, verify_suite
+from quartet.tooling.wheel_verifier import source_digest, source_entries
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTRYPOINT = ROOT / "modal_fusion_executor.py"
@@ -90,20 +90,18 @@ def _wheel(
     injected: tuple[str, bytes] | None = None,
     executable_member: str | None = None,
 ) -> str:
-    entries = source_entries(ROOT / "src/heliostune")
+    entries = source_entries(ROOT / "src/quartet")
     if tamper == "changed":
         first = sorted(entries)[0]
         entries[first] += b"\n# malicious\n"
     elif tamper == "extra":
-        entries["heliostune/backdoor.py"] = b"print('owned')\n"
+        entries["quartet/backdoor.py"] = b"print('owned')\n"
     if injected is not None:
         entries[injected[0]] = injected[1]
-    dist_info = "heliostune-1.0.0.dist-info"
-    entries[f"{dist_info}/METADATA"] = b"Metadata-Version: 2.1\nName: heliostune\nVersion: 1.0.0\n"
+    dist_info = "quartet-1.0.0.dist-info"
+    entries[f"{dist_info}/METADATA"] = b"Metadata-Version: 2.1\nName: quartet\nVersion: 1.0.0\n"
     entries[f"{dist_info}/WHEEL"] = b"Wheel-Version: 1.0\nTag: py3-none-any\n"
-    entries[f"{dist_info}/entry_points.txt"] = (
-        b"[console_scripts]\nheliostune = heliostune.cli:main\n"
-    )
+    entries[f"{dist_info}/entry_points.txt"] = b"[console_scripts]\nquartet = quartet.cli:main\n"
     entries[f"{dist_info}/licenses/LICENSE"] = (ROOT / "LICENSE").read_bytes()
     record_name = f"{dist_info}/RECORD"
     stream = io.StringIO(newline="")
@@ -120,9 +118,7 @@ def _wheel(
                 archive.writestr(info, payload)
             else:
                 archive.writestr(name, payload)
-    packaged = {
-        name: payload for name, payload in entries.items() if name.startswith("heliostune/")
-    }
+    packaged = {name: payload for name, payload in entries.items() if name.startswith("quartet/")}
     return source_digest(packaged)
 
 
@@ -130,7 +126,7 @@ def _manifest(wheel: Path, *, source_sha256: str | None = None) -> Path:
     payload = {
         "schema_version": 1,
         "head_commit": HEAD,
-        "source_sha256": source_digest(source_entries(ROOT / "src/heliostune"))
+        "source_sha256": source_digest(source_entries(ROOT / "src/quartet"))
         if source_sha256 is None
         else source_sha256,
         "wheel_filename": wheel.name,
@@ -154,15 +150,15 @@ def _manifest(wheel: Path, *, source_sha256: str | None = None) -> Path:
 
 @pytest.fixture
 def entrypoint(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
-    wheel = tmp_path / "heliostune-1.0.0-py3-none-any.whl"
+    wheel = tmp_path / "quartet-1.0.0-py3-none-any.whl"
     _wheel(wheel)
     manifest = _manifest(wheel)
     modal_stub = types.ModuleType("modal")
     modal_stub.App = _App  # type: ignore[attr-defined]
     modal_stub.Image = _Image  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "modal", modal_stub)
-    monkeypatch.setenv("HELIOSTUNE_MODAL_WHEEL", str(wheel))
-    monkeypatch.setenv("HELIOSTUNE_MODAL_WHEEL_MANIFEST", str(manifest))
+    monkeypatch.setenv("QUARTET_MODAL_WHEEL", str(wheel))
+    monkeypatch.setenv("QUARTET_MODAL_WHEEL_MANIFEST", str(manifest))
 
     completed = SimpleNamespace(stdout="")
 
@@ -216,7 +212,7 @@ def test_modal_decorator_keeps_every_hardening_argument() -> None:
 def test_malicious_wheel_with_matching_forged_manifest_is_rejected(
     entrypoint: Any, tmp_path: Path
 ) -> None:
-    malicious = tmp_path / "heliostune-9.9.9-py3-none-any.whl"
+    malicious = tmp_path / "quartet-9.9.9-py3-none-any.whl"
     forged_source = _wheel(malicious, tamper="extra")
     _manifest(malicious, source_sha256=forged_source)
     with pytest.raises(RuntimeError, match="outside the allowlist"):
@@ -224,11 +220,11 @@ def test_malicious_wheel_with_matching_forged_manifest_is_rejected(
 
 
 def test_record_hash_tampering_is_rejected(entrypoint: Any, tmp_path: Path) -> None:
-    wheel = tmp_path / "heliostune-2.0.0-py3-none-any.whl"
+    wheel = tmp_path / "quartet-2.0.0-py3-none-any.whl"
     _wheel(wheel)
     _manifest(wheel)
     with zipfile.ZipFile(wheel, "a") as archive:
-        archive.writestr("heliostune/backdoor.py", b"tampered")
+        archive.writestr("quartet/backdoor.py", b"tampered")
     manifest = json.loads(entrypoint.wheel_manifest_path(wheel).read_text())
     manifest["wheel_sha256"] = sha256_bytes(wheel.read_bytes())
     entrypoint.wheel_manifest_path(wheel).write_text(
@@ -241,9 +237,9 @@ def test_record_hash_tampering_is_rejected(entrypoint: Any, tmp_path: Path) -> N
 @pytest.mark.parametrize(
     ("name", "payload"),
     [
-        ("heliostune_loader.pth", b"import sitecustomize\n"),
+        ("quartet_loader.pth", b"import sitecustomize\n"),
         (
-            "heliostune-1.0.0.data/purelib/sitecustomize.py",
+            "quartet-1.0.0.data/purelib/sitecustomize.py",
             b"raise RuntimeError('owned')\n",
         ),
         ("sitecustomize.py", b"raise RuntimeError('owned')\n"),
@@ -257,7 +253,7 @@ def test_valid_record_wheel_rejects_payloads_outside_exact_allowlist(
     name: str,
     payload: bytes,
 ) -> None:
-    wheel = tmp_path / "heliostune-1.0.0-py3-none-any.whl"
+    wheel = tmp_path / "quartet-1.0.0-py3-none-any.whl"
     _wheel(wheel, injected=(name, payload))
     _manifest(wheel)
     with pytest.raises(RuntimeError, match="outside the allowlist"):
@@ -268,7 +264,7 @@ def test_valid_record_wheel_rejects_extra_dist_info(
     entrypoint: Any,
     tmp_path: Path,
 ) -> None:
-    wheel = tmp_path / "heliostune-1.0.0-py3-none-any.whl"
+    wheel = tmp_path / "quartet-1.0.0-py3-none-any.whl"
     _wheel(
         wheel,
         injected=(
@@ -285,8 +281,8 @@ def test_valid_record_wheel_rejects_executable_source_member(
     entrypoint: Any,
     tmp_path: Path,
 ) -> None:
-    wheel = tmp_path / "heliostune-1.0.0-py3-none-any.whl"
-    member = sorted(source_entries(ROOT / "src/heliostune"))[0]
+    wheel = tmp_path / "quartet-1.0.0-py3-none-any.whl"
+    member = sorted(source_entries(ROOT / "src/quartet"))[0]
     _wheel(wheel, executable_member=member)
     _manifest(wheel)
     with pytest.raises(RuntimeError, match="executable member"):
@@ -414,12 +410,12 @@ def test_native_remote_request_dispatches_through_common_local_executor(
         return SimpleNamespace(to_transport_json=lambda: "native-transport")
 
     monkeypatch.setattr(entrypoint, "validate_wheel_manifest", validate_wheel)
-    fake_kernel = types.ModuleType("heliostune.kernel")
+    fake_kernel = types.ModuleType("quartet.kernel")
     fake_kernel.get_hardware_profile = hardware_profile
-    monkeypatch.setitem(sys.modules, "heliostune.kernel", fake_kernel)
-    monkeypatch.setattr("heliostune.hardware.validate_hardware", validate_observed_hardware)
-    monkeypatch.setattr("heliostune.local_executor.execute_local_suite", execute)
-    monkeypatch.setattr("heliostune.tooling.remote_execution.RemoteResultEnvelope", envelope)
+    monkeypatch.setitem(sys.modules, "quartet.kernel", fake_kernel)
+    monkeypatch.setattr("quartet.hardware.validate_hardware", validate_observed_hardware)
+    monkeypatch.setattr("quartet.local_executor.execute_local_suite", execute)
+    monkeypatch.setattr("quartet.tooling.remote_execution.RemoteResultEnvelope", envelope)
 
     assert entrypoint.execute_fusion_suite(plan.request_json) == "native-transport"
     assert events == ["wheel", "wheel", "hardware", "validate-hardware", "execute"]
@@ -455,7 +451,7 @@ def test_remote_registry_mismatch_precedes_wheel_hardware_and_execution(
         lambda *_args, **_kwargs: pytest.fail("registry mismatch must precede wheel validation"),
     )
     monkeypatch.setattr(
-        "heliostune.local_executor.execute_local_suite",
+        "quartet.local_executor.execute_local_suite",
         lambda *_args, **_kwargs: pytest.fail("registry mismatch must precede execution"),
     )
 
@@ -493,7 +489,7 @@ def test_returned_terminal_results_publish_matching_receipts(
     result = SimpleNamespace(outcome=outcome)
     envelope = SimpleNamespace(to_json=lambda: "canonical-envelope-json")
     monkeypatch.setattr(
-        "heliostune.tooling.remote_execution.validate_remote_result",
+        "quartet.tooling.remote_execution.validate_remote_result",
         lambda *args, **kwargs: (envelope, result),
     )
     published: dict[str, object] = {}
@@ -501,7 +497,7 @@ def test_returned_terminal_results_publish_matching_receipts(
     def capture(records: object, **kwargs: object) -> None:
         published.update(kwargs)
 
-    monkeypatch.setattr("heliostune.tooling.remote_execution.write_remote_receipt", capture)
+    monkeypatch.setattr("quartet.tooling.remote_execution.write_remote_receipt", capture)
     code = entrypoint._execute_plan(plan, plan.intent.output_path, Remote())
     assert code == expected_code
     assert events == ["spawn", ("get", CLIENT_TIMEOUT_SECONDS)]
@@ -519,7 +515,7 @@ def test_spawn_exception_is_acknowledgement_lost_not_cancellation(
     plan = entrypoint._preflight(SUITE, PLUGIN, tmp_path / "spawn-lost")
     published: dict[str, object] = {}
     monkeypatch.setattr(
-        "heliostune.tooling.remote_execution.write_remote_receipt",
+        "quartet.tooling.remote_execution.write_remote_receipt",
         lambda records, **kwargs: published.update(kwargs),
     )
 
@@ -575,7 +571,7 @@ def test_known_handle_baseexception_cancels_before_journaling_unresolved(
 
     monkeypatch.setattr(RemoteJournal, "append", recording_append)
     monkeypatch.setattr(
-        "heliostune.tooling.remote_execution.write_remote_receipt", lambda *args, **kwargs: None
+        "quartet.tooling.remote_execution.write_remote_receipt", lambda *args, **kwargs: None
     )
     with pytest.raises(type(failure)):
         entrypoint._execute_plan(plan, plan.intent.output_path, Remote())
@@ -644,7 +640,7 @@ def test_parent_swap_after_spawn_cancels_and_never_publishes_to_substitute(
             return Call()
 
     monkeypatch.setattr(
-        "heliostune.tooling.remote_execution.write_remote_receipt",
+        "quartet.tooling.remote_execution.write_remote_receipt",
         lambda *args, **kwargs: pytest.fail("substituted parent must not receive a receipt"),
     )
     with pytest.raises(ArtifactError, match="parent identity changed"):

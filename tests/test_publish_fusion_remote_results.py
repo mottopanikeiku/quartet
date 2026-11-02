@@ -10,7 +10,7 @@ from typing import Any, cast
 
 import pytest
 
-from heliostune.errors import ArtifactError, SchemaError
+from quartet.errors import ArtifactError, SchemaError
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/publish_fusion_remote_results.py"

@@ -15,17 +15,17 @@ from typing import NoReturn, cast
 
 import zstandard
 
-from heliostune.native_fusion_analysis import analyze_native_fusion_result
-from heliostune.native_fusion_executor import NativeFusionExecutionResult
-from heliostune.tooling.artifacts import read_git_blob, strict_json_loads, write_bytes_atomic
-from heliostune.tooling.remote_execution import (
+from quartet.native_fusion_analysis import analyze_native_fusion_result
+from quartet.native_fusion_executor import NativeFusionExecutionResult
+from quartet.tooling.artifacts import read_git_blob, strict_json_loads, write_bytes_atomic
+from quartet.tooling.remote_execution import (
     VerifiedRemoteReceipt,
     canonical_json_bytes,
     sha256_bytes,
     verify_remote_receipt,
     verify_remote_receipt_payloads,
 )
-from heliostune.validation import exact_fields, exact_object
+from quartet.validation import exact_fields, exact_object
 
 _REPOSITORY = Path(__file__).resolve().parents[1]
 _PUBLISHER_PATH = Path(__file__).resolve()
@@ -67,11 +67,11 @@ _NONCLAIMS = (
     "No expansion is authorized.",
 )
 _PUBLICATION_SOURCES = {
-    "analysis": "src/heliostune/native_fusion_analysis.py",
-    "executor": "src/heliostune/native_fusion_executor.py",
-    "kernel_api": "src/heliostune/fusion_kernels.py",
-    "kernel_runtime": "src/heliostune/_fusion_gpu.py",
-    "remote_transport": "src/heliostune/tooling/remote_execution.py",
+    "analysis": "src/quartet/native_fusion_analysis.py",
+    "executor": "src/quartet/native_fusion_executor.py",
+    "kernel_api": "src/quartet/fusion_kernels.py",
+    "kernel_runtime": "src/quartet/_fusion_gpu.py",
+    "remote_transport": "src/quartet/tooling/remote_execution.py",
     "modal_transport": "modal_fusion_executor.py",
 }
 
@@ -613,7 +613,7 @@ def _source_bindings(
     }
     for role, relative in _PUBLICATION_SOURCES.items():
         if historical:
-            relative = relative.replace("/tooling/", "/")
+            relative = relative.replace("src/quartet/", "src/heliostune/").replace("/tooling/", "/")
         current[role] = _binding(relative, _source_bytes(relative, historical=historical))
     return {
         "current": current,

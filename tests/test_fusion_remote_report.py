@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-import heliostune.cli as cli
-from heliostune.errors import SchemaError
-from heliostune.tooling.engineering_report import (
+import quartet.cli as cli
+from quartet.errors import SchemaError
+from quartet.tooling.engineering_report import (
     FUSION_REMOTE_STUDY_ID,
     FusionRemoteSummary,
     parse_engineering_summary,

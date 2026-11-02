@@ -1,4 +1,4 @@
-"""Capture immutable bytes present at the audited HeliosTune commit."""
+"""Capture immutable bytes present at the audited commit."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Final
 
-from heliostune.tooling.artifacts import historical_artifact_path, write_text_atomic
+from quartet.tooling.artifacts import historical_artifact_path, write_text_atomic
 
 _REPO: Final = Path(__file__).resolve().parents[1]
 _DEFAULT_OUTPUT: Final = _REPO / "benchmarks/historical-artifact-baseline.json"

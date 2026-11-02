@@ -13,9 +13,9 @@ from typing import Any, cast
 import numpy as np
 import pytest
 
-import heliostune.local_executor as local
-from heliostune.errors import SchemaError
-from heliostune.tooling.scope import Suite, load_suite
+import quartet.local_executor as local
+from quartet.errors import SchemaError
+from quartet.tooling.scope import Suite, load_suite
 
 ROOT = Path(__file__).parents[1]
 MLP = ROOT / "benchmarks/suites/gated-mlp-epilogue-v1.json"
@@ -204,7 +204,7 @@ def test_execute_and_parse_native_suite_import_lazily_by_exact_digest(
 
     def load(name: str) -> object:
         imports.append(name)
-        assert name == "heliostune.native_fusion_executor"
+        assert name == "quartet.native_fusion_executor"
         return fake_module
 
     monkeypatch.setattr(importlib, "import_module", load)
@@ -223,8 +223,8 @@ def test_execute_and_parse_native_suite_import_lazily_by_exact_digest(
         is parsed
     )
     assert imports == [
-        "heliostune.native_fusion_executor",
-        "heliostune.native_fusion_executor",
+        "quartet.native_fusion_executor",
+        "quartet.native_fusion_executor",
     ]
     assert parser_calls == [
         (

@@ -10,17 +10,17 @@ from typing import Any
 import pytest
 from test_methodology import _write_closed_bundle
 
-import heliostune.tooling.artifacts as artifact_io
-import heliostune.tooling.verification as verification
-from heliostune.errors import ArtifactError, SchemaError
-from heliostune.tooling.artifacts import strict_json_dumps
-from heliostune.tooling.methodology import (
+import quartet.tooling.artifacts as artifact_io
+import quartet.tooling.verification as verification
+from quartet.errors import ArtifactError, SchemaError
+from quartet.tooling.artifacts import strict_json_dumps
+from quartet.tooling.methodology import (
     Lifecycle,
     VerificationLimitations,
     verify_bundle_v1,
     verify_bundle_v1_from_directory_fd,
 )
-from heliostune.tooling.verification import (
+from quartet.tooling.verification import (
     VERIFICATION_CONTROL_NAMES_V1,
     VERIFIER_SOURCE_PATHS_V1,
     FileIdentityV1,
@@ -298,15 +298,15 @@ def test_source_roster_aggregate_and_historical_identity(tmp_path: Path) -> None
     record, _ = _record(tmp_path)
     assert tuple(source.path for source in record.verifier.sources) == VERIFIER_SOURCE_PATHS_V1
     assert VERIFIER_SOURCE_PATHS_V1 == (
-        "heliostune/errors.py",
-        "heliostune/tooling/_offline_worker.py",
-        "heliostune/tooling/_reference_analyzer.py",
-        "heliostune/tooling/artifacts.py",
-        "heliostune/tooling/methodology.py",
-        "heliostune/tooling/offline_replay.py",
-        "heliostune/tooling/scope.py",
-        "heliostune/tooling/verification.py",
-        "heliostune/validation.py",
+        "quartet/errors.py",
+        "quartet/tooling/_offline_worker.py",
+        "quartet/tooling/_reference_analyzer.py",
+        "quartet/tooling/artifacts.py",
+        "quartet/tooling/methodology.py",
+        "quartet/tooling/offline_replay.py",
+        "quartet/tooling/scope.py",
+        "quartet/tooling/verification.py",
+        "quartet/validation.py",
     )
 
     historical_sources = list(record.verifier.sources)
@@ -351,20 +351,36 @@ def test_source_roster_aggregate_and_historical_identity(tmp_path: Path) -> None
             "heliostune/validation.py",
             "heliostune/verification.py",
         ),
+        (
+            "heliostune/errors.py",
+            "heliostune/tooling/_offline_worker.py",
+            "heliostune/tooling/_reference_analyzer.py",
+            "heliostune/tooling/artifacts.py",
+            "heliostune/tooling/methodology.py",
+            "heliostune/tooling/offline_replay.py",
+            "heliostune/tooling/scope.py",
+            "heliostune/tooling/verification.py",
+            "heliostune/validation.py",
+        ),
     ],
 )
 def test_loader_accepts_historical_source_rosters(
     tmp_path: Path, legacy_paths: tuple[str, ...]
 ) -> None:
     record, _ = _record(tmp_path)
-    current_by_old_path = {
-        source.path.replace("heliostune/tooling/", "heliostune/"): source
+    renamed = [
+        (source, source.path.replace("quartet/", "heliostune/"))
         for source in record.verifier.sources
-    }
+    ]
+    current_by_old_path = {old: source for source, old in renamed}
+    current_by_old_path.update(
+        {old.replace("heliostune/tooling/", "heliostune/"): source for source, old in renamed}
+    )
     sources = tuple(replace(current_by_old_path[path], path=path) for path in legacy_paths)
     assert tuple(source.path for source in sources) == legacy_paths
     verifier = replace(
         record.verifier,
+        package="heliostune",
         source_sha256=verification._source_aggregate_sha256(sources),
         sources=sources,
     )
@@ -383,7 +399,7 @@ def test_source_identity_faults_are_rejected(tmp_path: Path, fault: str) -> None
     sources = verifier["sources"]
     assert isinstance(sources, list)
     if fault == "roster":
-        sources[0]["path"] = "heliostune/other.py"
+        sources[0]["path"] = "quartet/other.py"
     elif fault == "order":
         sources[0], sources[1] = sources[1], sources[0]
     else:

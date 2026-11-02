@@ -4,19 +4,19 @@ import random
 
 import pytest
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_WORKLOADS,
     HOPPER_GEMM_CONFIGS,
     SKINNY_GEMV_CONFIGS,
     HopperGemmConfig,
     SkinnyGemvConfig,
 )
-from heliostune.errors import HeliostuneError, ProtocolError
-from heliostune.schema import HardwareProfile
+from quartet.errors import ProtocolError, QuartetError
+from quartet.schema import HardwareProfile
 
 pytest.importorskip("torch")
 pytest.importorskip("triton")
-from heliostune import hopper_benchmark
+from quartet import hopper_benchmark
 
 
 def _cuda_must_not_run(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -63,7 +63,7 @@ def test_invalid_requests_are_rejected_before_cuda(
     }
     arguments[field] = invalid
 
-    with pytest.raises(HeliostuneError, match=message):
+    with pytest.raises(QuartetError, match=message):
         hopper_benchmark.benchmark_hopper_candidates(**arguments)  # type: ignore[arg-type]
 
 

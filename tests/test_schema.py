@@ -6,10 +6,10 @@ import json
 
 import pytest
 
-from heliostune.configs import KernelConfig, ModelSpec, Workload
-from heliostune.errors import SchemaError
-from heliostune.schema import HardwareProfile, Measurement, read_jsonl, write_jsonl
-from heliostune.synthetic import synthetic_measurements
+from quartet.configs import KernelConfig, ModelSpec, Workload
+from quartet.errors import SchemaError
+from quartet.schema import HardwareProfile, Measurement, read_jsonl, write_jsonl
+from quartet.synthetic import synthetic_measurements
 
 
 def _hardware() -> HardwareProfile:

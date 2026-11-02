@@ -11,10 +11,10 @@ from typing import Any
 
 import pytest
 
-from heliostune.configs import KernelConfig, Workload
-from heliostune.replay import BenchmarkTable
-from heliostune.schema import HardwareProfile, Measurement
-from heliostune.tooling.matmul_audit import (
+from quartet.configs import KernelConfig, Workload
+from quartet.replay import BenchmarkTable
+from quartet.schema import HardwareProfile, Measurement
+from quartet.tooling.matmul_audit import (
     audit_rows,
     build_audit,
     geometric_mean,

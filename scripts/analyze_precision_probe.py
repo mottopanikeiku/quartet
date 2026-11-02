@@ -20,8 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from heliostune.tooling.artifacts import read_json
-from heliostune.validation import (
+from quartet.tooling.artifacts import read_json
+from quartet.validation import (
     exact_int,
     exact_object,
     finite_float,
@@ -266,7 +266,7 @@ def _print_report(data: dict[str, Any], summaries: Sequence[WorkloadSummary]) ->
     print()
 
     print("Per-workload medians over banks")
-    # 59 is the longest key in heliostune.configs.DEFAULT_WORKLOADS.
+    # 59 is the longest key in quartet.configs.DEFAULT_WORKLOADS.
     header = (
         f"  {'workload':<59} {'M':>5} {'K':>6} {'red/strict':>11} "
         f"{'strict/triton':>14} {'red/triton':>11} {'frozen b1→b2':>12}"

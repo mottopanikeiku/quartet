@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from heliostune.action_collection import (
+from quartet.action_collection import (
     BANKS,
     IDENTITY_FIELDS,
     RunSpec,
@@ -36,10 +36,10 @@ from heliostune.action_collection import (
     timing_order,
     validate_run_id,
 )
-from heliostune.action_configs import action_set_manifest, candidates_for
-from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, Workload
-from heliostune.errors import ArtifactError, ProtocolError
-from heliostune.tooling.artifacts import strict_json_dumps
+from quartet.action_configs import action_set_manifest, candidates_for
+from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, Workload
+from quartet.errors import ArtifactError, ProtocolError
+from quartet.tooling.artifacts import strict_json_dumps
 
 _REPO = Path(__file__).resolve().parents[1]
 _HARDWARE = {
@@ -411,9 +411,9 @@ def _git(repository: Path, *arguments: str) -> str:
 def _repository(tmp_path: Path) -> Path:
     repository = tmp_path / "repo"
     (repository / "docs").mkdir(parents=True)
-    (repository / "src/heliostune").mkdir(parents=True)
+    (repository / "src/quartet").mkdir(parents=True)
     (repository / "docs/action-expansion.md").write_text("plan\n", encoding="utf-8")
-    (repository / "src/heliostune/__init__.py").write_text("", encoding="utf-8")
+    (repository / "src/quartet/__init__.py").write_text("", encoding="utf-8")
     _git(repository, "init", "-q")
     _git(repository, "add", ".")
     _git(repository, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "plan")
@@ -450,7 +450,7 @@ def test_source_digest_matches_the_modal_wheel_manifest_digest() -> None:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     expected = module._source_digest(module._source_entries())
-    assert package_source_sha256(_REPO / "src/heliostune") == expected
+    assert package_source_sha256(_REPO / "src/quartet") == expected
     with pytest.raises(ProtocolError, match="does not exist"):
         package_source_sha256(_REPO / "missing")
 

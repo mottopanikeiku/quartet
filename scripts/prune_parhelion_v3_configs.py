@@ -10,17 +10,17 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_WORKLOADS,
     PARHELION_V3_CANDIDATE_CONFIGS,
     PARHELION_V3_OFFICIAL_CONFIG_KEYS,
     KernelConfig,
 )
-from heliostune.features import v3_feature_rank
-from heliostune.hardware import expectation_for_gpu, validate_hardware
-from heliostune.schema import HardwareProfile
-from heliostune.tooling.artifacts import read_json, read_measurements, write_json_atomic
-from heliostune.tooling.protocol import load_v3_protocol, require_v3_runtime, runtime_manifest
+from quartet.features import v3_feature_rank
+from quartet.hardware import expectation_for_gpu, validate_hardware
+from quartet.schema import HardwareProfile
+from quartet.tooling.artifacts import read_json, read_measurements, write_json_atomic
+from quartet.tooling.protocol import load_v3_protocol, require_v3_runtime, runtime_manifest
 
 _REPO = Path(__file__).resolve().parents[1]
 _DEFAULT_PROTOCOL = _REPO / "benchmarks/parhelion-v3-development-protocol.json"

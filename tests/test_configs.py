@@ -1,4 +1,4 @@
-from heliostune.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, MODEL_SPECS
+from quartet.configs import DEFAULT_CONFIGS, DEFAULT_WORKLOADS, MODEL_SPECS
 
 
 def test_frozen_manifests_are_unique_and_grouped() -> None:

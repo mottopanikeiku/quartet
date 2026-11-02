@@ -10,15 +10,15 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
-from heliostune.tooling.artifacts import (
+from quartet.tooling.artifacts import (
     historical_artifact_path,
     read_git_blob,
     read_json,
     read_measurements,
     write_json_atomic,
 )
-from heliostune.tooling.report import render_report
-from heliostune.v2_addendum import build_v2_addendum_summary
+from quartet.tooling.report import render_report
+from quartet.v2_addendum import build_v2_addendum_summary
 
 _REPO = Path(__file__).resolve().parents[1]
 _DATA = _REPO / "benchmarks/data/parhelion-v2-measurements.jsonl.zst"

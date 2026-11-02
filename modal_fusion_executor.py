@@ -70,9 +70,9 @@ def _sha256_file(path: Path) -> str:
 
 
 def _source_digest(repository: Path) -> str:
-    from heliostune.tooling.wheel_verifier import source_digest, source_entries
+    from quartet.tooling.wheel_verifier import source_digest, source_entries
 
-    return source_digest(source_entries(repository / "src/heliostune"))
+    return source_digest(source_entries(repository / "src/quartet"))
 
 
 def wheel_manifest_path(wheel: Path) -> Path:
@@ -145,10 +145,10 @@ def validate_wheel_manifest(
     remote: bool = False,
 ) -> WheelProvenance:
     """Validate supplemental manifest and, locally, wheel/RECORD/source custody."""
-    configured_manifest = os.environ.get("HELIOSTUNE_MODAL_WHEEL_MANIFEST")
+    configured_manifest = os.environ.get("QUARTET_MODAL_WHEEL_MANIFEST")
     if remote:
         if not configured_manifest:
-            raise RuntimeError("HELIOSTUNE_MODAL_WHEEL_MANIFEST is required for a remote wheel")
+            raise RuntimeError("QUARTET_MODAL_WHEEL_MANIFEST is required for a remote wheel")
         manifest = Path(configured_manifest)
         if manifest != wheel_manifest_path(wheel):
             raise RuntimeError("remote Modal wheel manifest must be adjacent to the wheel")
@@ -202,7 +202,7 @@ def validate_wheel_manifest(
         ):
             raise RuntimeError(f"Modal wheel manifest {field} is not a lowercase hex digest")
     if not remote:
-        from heliostune.tooling.wheel_verifier import verify_wheel_against_source
+        from quartet.tooling.wheel_verifier import verify_wheel_against_source
 
         root = _REPO if repository is None else repository.resolve()
         head = _git_head(root)
@@ -210,7 +210,7 @@ def validate_wheel_manifest(
             raise RuntimeError(
                 f"Modal wheel was built at HEAD {data['head_commit']}, current HEAD is {head}"
             )
-        verified = verify_wheel_against_source(wheel, root / "src/heliostune")
+        verified = verify_wheel_against_source(wheel, root / "src/quartet")
         if verified.wheel_sha256 != wheel_sha256:
             raise RuntimeError("Modal wheel digest changed during verification")
         if data["source_sha256"] != verified.source_sha256:
@@ -228,16 +228,16 @@ def validate_wheel_manifest(
 
 def configured_modal_wheel(root: Path | None = None) -> Path:
     base = _REPO if root is None else root.resolve()
-    configured = os.environ.get("HELIOSTUNE_MODAL_WHEEL")
+    configured = os.environ.get("QUARTET_MODAL_WHEEL")
     if configured:
         wheel = Path(configured)
         if not wheel.is_file():
-            raise RuntimeError(f"HELIOSTUNE_MODAL_WHEEL does not exist: {wheel}")
+            raise RuntimeError(f"QUARTET_MODAL_WHEEL does not exist: {wheel}")
         remote = wheel.is_absolute() and wheel.parent == Path("/root")
         validate_wheel_manifest(wheel, repository=base, remote=remote)
         return wheel
     directory = base / _WHEEL_DIRECTORY
-    wheels = tuple(sorted(directory.glob("heliostune-*.whl")))
+    wheels = tuple(sorted(directory.glob("quartet-*.whl")))
     if len(wheels) != 1:
         raise RuntimeError(
             "run `uv run python scripts/build_modal_wheel.py` after committing the final clean "
@@ -260,14 +260,14 @@ def build_image(wheel: Path) -> Any:
         .run_commands(f"python -m pip install --no-deps {wheel_remote}")
         .env(
             {
-                "HELIOSTUNE_MODAL_WHEEL": wheel_remote,
-                "HELIOSTUNE_MODAL_WHEEL_MANIFEST": manifest_remote,
+                "QUARTET_MODAL_WHEEL": wheel_remote,
+                "QUARTET_MODAL_WHEEL_MANIFEST": manifest_remote,
             }
         )
     )
 
 
-app = modal.App("heliostune-fusion-executor")
+app = modal.App("quartet-fusion-executor")
 _MODAL_WHEEL = configured_modal_wheel()
 image = build_image(_MODAL_WHEEL)
 
@@ -285,14 +285,14 @@ image = build_image(_MODAL_WHEEL)
 )
 def execute_fusion_suite(request_json: str) -> str:
     """Validate and execute one suite, returning one compressed transport wrapper."""
-    from heliostune.fusion_execution_registry import fusion_execution_spec
-    from heliostune.local_executor import execute_local_suite
-    from heliostune.tooling.remote_execution import (
+    from quartet.fusion_execution_registry import fusion_execution_spec
+    from quartet.local_executor import execute_local_suite
+    from quartet.tooling.remote_execution import (
         RemoteResultEnvelope,
         decode_remote_request,
         sha256_bytes,
     )
-    from heliostune.tooling.scope import verify_suite
+    from quartet.tooling.scope import verify_suite
 
     intent, suite_bytes, request_digest = decode_remote_request(request_json)
     execution = fusion_execution_spec(intent.suite_sha256)
@@ -304,7 +304,7 @@ def execute_fusion_suite(request_json: str) -> str:
     if intent.plugin_sha256 != execution.plugin_sha256:
         raise RuntimeError("remote plugin is outside the frozen execution registry")
 
-    with tempfile.TemporaryDirectory(prefix="heliostune-fusion-remote-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="quartet-fusion-remote-") as temporary:
         os.chmod(temporary, 0o700)
         suite_path = Path(temporary) / "suite.json"
         descriptor = os.open(suite_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -338,8 +338,8 @@ def execute_fusion_suite(request_json: str) -> str:
         for field, observed in observed_wheel.items():
             if getattr(intent, field) != observed:
                 raise RuntimeError(f"remote {field} does not match the request intent")
-        from heliostune.hardware import expectation_for_gpu, validate_hardware
-        from heliostune.kernel import get_hardware_profile
+        from quartet.hardware import expectation_for_gpu, validate_hardware
+        from quartet.kernel import get_hardware_profile
 
         hardware = get_hardware_profile("H100")
         validate_hardware(hardware, expectation_for_gpu("H100"))
@@ -383,15 +383,15 @@ class _LocalPlan:
 
 
 def _preflight(suite: str | Path, plugin: str | Path, output: str | Path) -> _LocalPlan:
-    from heliostune.fusion_execution_registry import fusion_execution_spec
-    from heliostune.tooling.remote_execution import (
+    from quartet.fusion_execution_registry import fusion_execution_spec
+    from quartet.tooling.remote_execution import (
         RemoteIntent,
         decode_remote_request,
         encode_remote_request,
         protect_remote_output,
         sha256_bytes,
     )
-    from heliostune.tooling.scope import verify_plugin, verify_suite
+    from quartet.tooling.scope import verify_plugin, verify_suite
 
     suite_path = Path(suite)
     plugin_path = Path(plugin)
@@ -470,7 +470,7 @@ def _cancel_then_unresolve(
 
 
 def _publish_unresolved(plan: _LocalPlan, records: Any, *, client_spawn_count: int) -> None:
-    from heliostune.tooling.remote_execution import write_remote_receipt
+    from quartet.tooling.remote_execution import write_remote_receipt
 
     if records.journal.state != "unresolved":
         return
@@ -488,13 +488,13 @@ def _publish_unresolved(plan: _LocalPlan, records: Any, *, client_spawn_count: i
 
 
 def _execute_plan(plan: _LocalPlan, output: str | Path, remote_function: Any) -> int:
-    from heliostune.tooling.remote_execution import (
+    from quartet.tooling.remote_execution import (
         CLIENT_TIMEOUT_SECONDS,
         create_remote_records,
         validate_remote_result,
         write_remote_receipt,
     )
-    from heliostune.validation import nonblank_string
+    from quartet.validation import nonblank_string
 
     records = create_remote_records(output, plan.intent, plan.request_digest)
     call: Any | None = None

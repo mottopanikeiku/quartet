@@ -7,16 +7,16 @@ import hashlib
 import tempfile
 from pathlib import Path
 
-from heliostune.configs import (
+from quartet.configs import (
     DEFAULT_WORKLOADS,
     PARHELION_V3_CANDIDATE_CONFIGS,
     PARHELION_V3_OFFICIAL_CONFIG_KEYS,
     TRITON_TUTORIAL_COMMIT,
     TRITON_TUTORIAL_CONFIG_PATH,
 )
-from heliostune.features import V2_FEATURE_NAMES, V3_FEATURE_NAMES
-from heliostune.tooling.artifacts import read_json, write_json_atomic
-from heliostune.tooling.protocol import (
+from quartet.features import V2_FEATURE_NAMES, V3_FEATURE_NAMES
+from quartet.tooling.artifacts import read_json, write_json_atomic
+from quartet.tooling.protocol import (
     V3_BANKS,
     V3_BUDGETS,
     V3_FINAL_SEEDS,
@@ -32,7 +32,7 @@ from heliostune.tooling.protocol import (
     V3_TRANSFER_STRENGTH_GRID,
     V3_VALIDATION_SEEDS,
 )
-from heliostune.validation import exact_object
+from quartet.validation import exact_object
 
 _REPO = Path(__file__).resolve().parents[1]
 _OUTPUT = _REPO / "benchmarks/parhelion-v3-development-protocol.json"
@@ -43,18 +43,18 @@ _SOURCE_PATHS = (
     "scripts/assemble_parhelion_v3.py",
     "scripts/freeze_parhelion_v3.py",
     "scripts/prune_parhelion_v3_configs.py",
-    "src/heliostune/cli.py",
-    "src/heliostune/bandit.py",
-    "src/heliostune/collection.py",
-    "src/heliostune/configs.py",
-    "src/heliostune/features.py",
-    "src/heliostune/hardware.py",
-    "src/heliostune/kernel.py",
-    "src/heliostune/tooling/protocol.py",
-    "src/heliostune/retrieval.py",
-    "src/heliostune/schema.py",
-    "src/heliostune/tooling/v3_artifacts.py",
-    "src/heliostune/v3_engine.py",
+    "src/quartet/cli.py",
+    "src/quartet/bandit.py",
+    "src/quartet/collection.py",
+    "src/quartet/configs.py",
+    "src/quartet/features.py",
+    "src/quartet/hardware.py",
+    "src/quartet/kernel.py",
+    "src/quartet/tooling/protocol.py",
+    "src/quartet/retrieval.py",
+    "src/quartet/schema.py",
+    "src/quartet/tooling/v3_artifacts.py",
+    "src/quartet/v3_engine.py",
 )
 
 
