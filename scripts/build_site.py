@@ -11,7 +11,7 @@ from html import escape
 from pathlib import Path
 from typing import Any, cast
 
-from heliostune.tooling.artifacts import read_json
+from quartet.tooling.artifacts import read_json
 
 _REPO = Path(__file__).resolve().parents[1]
 SUMMARY = "results/action-expansion-summary.json"
@@ -143,6 +143,11 @@ def _e(value: object) -> str:
     return escape(str(value), quote=True)
 
 
+def _current_path(path: str) -> str:
+    """Map a source path stored in the saved diagnosis, which predates the rename."""
+    return path.replace("src/heliostune/", "src/quartet/", 1)
+
+
 def _repo_link(path: str, text: str | None = None) -> str:
     return f'<a href="{_e(BLOB + path)}"><code>{_e(text or path)}</code></a>'
 
@@ -272,13 +277,13 @@ def _gpu_section(diagnosis: Mapping[str, Any]) -> str:
 <section id="gpus" aria-labelledby="gpus-title">
 <h2 id="gpus-title">Four GPUs, the same 96 workloads</h2>
 <p>The suite covers attention and FFN projections from Granite, Mistral, Phi and Qwen at
-M = 1, 7, 31, 96, 257 and 1024. There are 84 distinct shapes. Ratios are geometric means;
-lower is faster. Selection overhead compares the fixed pass-1 choice with the fastest
+M = 1, 7, 31, 96, 257 and 1024, which makes 84 distinct shapes. The ratios are geometric means
+where lower is faster, and selection overhead compares the fixed pass-1 choice with the fastest
 configuration measured on pass 2.</p>
 {table}
-<p>The original kernels are close to torch on A10 and L4. On H100 and T4, selecting
-configurations more accurately leaves most of the latency gap untouched. I expanded the
-H100 kernel set to address that gap.</p>
+<p>The original kernels are close to torch on the A10 and L4, but on the H100 and T4 selecting
+configurations more accurately would leave most of the latency gap untouched, so I expanded the
+H100 kernel set to go after that gap.</p>
 </section>"""
 
 
@@ -352,12 +357,12 @@ def _result_section(summary: Mapping[str, Any], diagnosis: Mapping[str, Any]) ->
 <h2 id="result-title">Closing the H100 gap</h2>
 <p>The new actions reduce geometric-mean latency by
 {(1 - comparison["geometric_mean_new_to_old"]) * 100:.1f}% and improve
-{comparison["new_faster_count"]}/{overall["named_workload_count"]} workloads. New/old latency is
+{comparison["new_faster_count"]}/{overall["named_workload_count"]} workloads, which puts new/old latency at
 <strong>{comparison["geometric_mean_new_to_old"]:.3f}</strong>.
-Each ratio divides the selected candidate's median by torch's median in the same scoring pass.
-“Named” weights each model projection equally; “unique shape” first averages projections
-sharing an (M,N,K) shape. The microsecond columns are arithmetic means. All of this is one H100
-session, and {sum(w["new_to_torch"] > 0.99 for w in wins)} of the {len(wins)} wins are under 1%.</p>
+Each ratio divides the selected candidate's median by torch's median in the same scoring pass,
+“named” weights each model projection equally, and “unique shape” first averages projections
+sharing an (M,N,K) shape, while the microsecond columns are arithmetic means. Everything comes from one
+H100 session, and {sum(w["new_to_torch"] > 0.99 for w in wins)} of the {len(wins)} wins over torch are under 1%.</p>
 {table}
 {wins_table}
 </section>"""
@@ -376,13 +381,13 @@ def _split_section(summary: Mapping[str, Any], diagnosis: Mapping[str, Any]) -> 
 <p>Pass 1 times all {len(actions["old"])} original configurations,
 {len(actions["new"]) - split} new ordinary and persistent actions, and {split} split-K actions
 when M ≤ 31 ({banks[1]["observed_cells"]:,} candidate measurements).
-For each workload, it selects the lowest valid median separately from the old set,
-the new set and their union, breaking ties by configuration key. Pass 2 times only those fixed
-choices ({banks[2]["observed_cells"]} candidate measurements). Both passes time torch once per
-workload. The JSON files call these passes banks 1 and 2.
-See the {_repo_link("docs/action-expansion.md", "measurement method")}.</p>
+For each workload it selects the lowest valid median separately from the old set,
+the new set and their union, breaking ties by configuration key, and pass 2 times only those fixed
+choices ({banks[2]["observed_cells"]} candidate measurements) while both passes time torch once per
+workload. The JSON files call these passes banks 1 and 2, and the
+{_repo_link("docs/action-expansion.md", "measurement method")} describes them in full.</p>
 <p>The combined set's pass-1 choice also wins the old-versus-new comparison on pass 2 for
-{agreed}/{same["named_covered"]} workloads. This page measures exhaustive selection;
+{agreed}/{same["named_covered"]} workloads. This page measures exhaustive selection, and
 Thompson sampling has not been rerun on the expanded set.</p>
 </section>"""
 
@@ -441,8 +446,8 @@ def _contract_section(summary: Mapping[str, Any]) -> str:
     return f"""
 <section id="contract" aria-labelledby="contract-title">
 <h2 id="contract-title">Numerical and timing setup</h2>
-<p>Each candidate must pass the numerical comparison before timing.
-Torch's reduced-precision FP16 reduction flag was enabled.</p>
+<p>Each candidate must pass the numerical comparison before it is timed, and Torch's
+reduced-precision FP16 reduction flag was enabled during the run.</p>
 {_dl(items)}
 </section>"""
 
@@ -557,8 +562,8 @@ def _regime_section(diagnosis: Mapping[str, Any]) -> str:
     return f"""
 <section id="regimes" aria-labelledby="regimes-title">
 <h2 id="regimes-title">H100 results by M</h2>
-<p>For M ≤ 31, where split-K applies, bank 1 picked split-K for {split_count}/{split_total} workloads. There,
-new/torch is {_e(ratios(split))}. At the larger M values without split-K it is {_e(ratios(rest))}. Bank 1 picked
+<p>For M ≤ 31, where split-K applies, bank 1 picked split-K for {split_count}/{split_total} workloads, and there
+new/torch is {_e(ratios(split))}, while at the larger M values without split-K it is {_e(ratios(rest))}. Bank 1 picked
 persistent TMA for {expansion["new_winner_families"].get("persistent", 0)} workloads, and it beat torch on none of
 them.</p>
 <figure>{_regime_chart(regimes)}
@@ -566,9 +571,9 @@ them.</p>
 <a href="h100-by-m.svg">Download the figure</a>.</figcaption></figure>
 {table}
 <p class="note">The last two columns use {_repo_link(H100_ARCHIVE, "the original H100 archive")},
-which predates this collection and uses a different correctness reference. Each entry spans its
+which predates this collection and uses a different correctness reference, and each entry spans its
 {len(pairs)} selection/scoring pairs. “Oracle” is the fastest of the original 36 actions on
-the scoring pass. “Pick / oracle” compares the earlier pass's choice with that minimum.</p>
+the scoring pass, and “Pick / oracle” compares the earlier pass's choice with that minimum.</p>
 </section>"""
 
 
@@ -646,18 +651,18 @@ def _bank_section(diagnosis: Mapping[str, Any]) -> str:
     return f"""
 <section id="bank" aria-labelledby="bank-title">
 <h2 id="bank-title">Selection loss across the stored measurements</h2>
-<p>For each pair of timing passes, I select the fastest valid action on the earlier pass and
-score it on the later pass. The comparison is the later pass's own minimum.
-Across {len(multi)} multi-pass archives, the selection is at most {bound_pct(worst, upper=True)} slower
-in geometric-mean latency. The same-pass minimum ranges from {_ratio(min(oracles))} to
-{_ratio(max(oracles))} torch. Where the gap is large, the kernel set is the main constraint.</p>
-<p>This comparison uses exhaustive selection. Probe-limited Thompson sampling and transfer
+<p>For each pair of timing passes I select the fastest valid action on the earlier pass and
+score it on the later pass, against the later pass's own minimum, and across {len(multi)} multi-pass
+archives the selection is at most {bound_pct(worst, upper=True)} slower in geometric-mean latency.
+The same-pass minimum ranges from {_ratio(min(oracles))} to {_ratio(max(oracles))} torch, so where the
+gap is large the kernel set is the main constraint.</p>
+<p>This comparison uses exhaustive selection, and the probe-limited Thompson sampling and transfer
 results are in the <a href="transfer.html">original tuning report</a>.</p>
 {multi_table}
 {single_table}
 <p class="note">Some archives contain the same measurements with different hardware labels or
-combined acquisition sessions. {len(diagnosis["shared_cells"])} archive pairs overlap; they are
-listed separately rather than pooled. Full per-shape results and failure counts are in
+combined acquisition sessions, so the {len(diagnosis["shared_cells"])} archive pairs that overlap are
+listed separately rather than pooled, and the full per-shape results and failure counts are in
 {_repo_link(DIAGNOSIS)}.</p>
 </section>"""
 
@@ -733,7 +738,7 @@ def _dossier_section(diagnosis: Mapping[str, Any]) -> str:
         "split_k": "Tensor-core partial tiles, an FP32 workspace and a separate reduction with one FP16 conversion.",
     }
     sources = "".join(
-        f"<li><strong>{_e(p['family'])}</strong> ({_repo_link(p['source'])}): "
+        f"<li><strong>{_e(p['family'])}</strong> ({_repo_link(_current_path(p['source']))}): "
         f"{_e(origins[p['family']])}</li>"
         for p in dossier["provenance"]
     )
@@ -750,10 +755,10 @@ come from the source configurations, not profiler measurements.</p>
 <ul>{sources}</ul>
 <h3>Selected actions next to their predictions</h3>
 {table}
-<p>The smallest masked-row fraction among all applicable new actions on this projection is {_e(padding)}. Every
-ordinary and persistent new action has BM ≥ {smallest_bm}; only split-K, for M ≤ 31, uses
+<p>The smallest masked-row fraction among all applicable new actions on this projection is {_e(padding)}, and every
+ordinary and persistent new action has BM ≥ {smallest_bm}, with only split-K, for M ≤ 31, using
 BM = {_e(", ".join(map(str, split_bm)))}. Some selected new actions launch fewer matmul programs than the
-{dossier["sm_count"]} SMs: {_e(sparse)}. Profiler counters would be needed to measure the cost of
+{dossier["sm_count"]} SMs ({_e(sparse)}), and profiler counters would be needed to measure the cost of
 padding, occupancy and memory traffic.</p>
 <p class="note">{_repo_link(DIAGNOSIS)} contains all {len(predictions)} configurations under
 <code>dossier</code>. {_repo_link("tests/test_kernel_dossier.py")} checks the formulas.</p>
@@ -771,7 +776,7 @@ def _archive_section() -> str:
     return f"""
 <section id="archive" aria-labelledby="archive-title">
 <h2 id="archive-title">Other reports</h2>
-<p>Older studies, kept unchanged because the release manifests hash them.</p>
+<p>These older studies are kept unchanged because the release manifests hash them, which is also why they still use the project's former name, heliostune.</p>
 <ul>{reports}</ul>
 <p class="note">Data published with the transfer reports: {data}.</p>
 </section>"""
@@ -836,9 +841,9 @@ def render(
 <p class="eyebrow">quartet · <a href="{REPOSITORY}">source</a></p>
 <h1>Triton matmul tuning across four GPUs</h1>
 <p class="lede">A Triton autotuner measured against torch.matmul on T4, A10, L4 and H100. In the
-original four-GPU comparison, the configuration picked on one timing pass was within 0.7% of the
-fastest of the 36 on a second pass, yet Triton on the H100 still trailed torch. Ten new kernels cut
-its H100 latency by 27%.</p>
+original four-GPU comparison the configuration picked on one timing pass was within 0.7% of the
+fastest of the 36 on a second pass, yet Triton on the H100 still trailed torch, so I wrote ten new
+kernels that cut its H100 latency by 27%.</p>
 <div class="strip">{strip}</div>
 <nav aria-label="Sections"><ul>
 <li><a href="#gpus">Four GPUs</a></li><li><a href="#result">H100 expansion</a></li>
@@ -853,10 +858,10 @@ its H100 latency by 27%.</p>
 <footer>
 <p>Generated by {_repo_link("scripts/build_site.py")} from:</p>
 <ul>{inputs}</ul>
-<p>Regenerate with <code>uv run python scripts/diagnose_kernel_bank.py</code>, then
-<code>uv run python scripts/build_site.py</code>; both accept <code>--check</code>. See also the
+<p>You can regenerate it with <code>uv run python scripts/diagnose_kernel_bank.py</code> followed by
+<code>uv run python scripts/build_site.py</code>, and both accept <code>--check</code>. See also the
 {_repo_link("README.md", "README")}, {_repo_link("results/action-expansion-raw.json", "raw measurements")} and
-{_repo_link("src/heliostune/action_configs.py", "action manifest")}. MIT license.</p>
+the {_repo_link("src/quartet/action_configs.py", "action manifest")}, and the code is MIT licensed.</p>
 </footer>
 </div>
 </body>
